@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medico - Clinic & Pathology Reports</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22mg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23134074%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b2545%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22url%28%23mg%29%22/%3E%3Cpath%20d%3D%22M17%2046V24l15%2016%2015-16v22%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%225.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2219%22%20r%3D%224%22%20fill%3D%22%2399ecfd%22/%3E%3Ccircle%20cx%3D%2247%22%20cy%3D%2219%22%20r%3D%224%22%20fill%3D%22%2399ecfd%22/%3E%3Cpath%20d%3D%22M32%208v12M26%2014h12%22%20stroke%3D%22%2399ecfd%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0b2545">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Medico">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Tiro+Devanagari+Hindi&family=Noto+Sans+Devanagari:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            clinic: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+              navy: '#0b2545',
+              dark: '#134074'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Merriweather', 'serif'],
+            nepali: ['Tiro Devanagari Hindi', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Document Print Styles */
+    @media print {
+      body * { visibility: hidden; }
+      html, body { background: #fff !important; }
+      #print-area, #print-area * { visibility: visible; }
+      #paper-scale { width: auto !important; height: auto !important; overflow: visible !important; }
+      #paper-box { transform: none !important; }
+      #print-area { position: absolute; left: 0; top: 0; margin: 0 !important; box-shadow: none !important; }
+      .no-print { display: none !important; }
+      @page { size: A4; margin: 10mm 0 0 0; }
+      @page :first { margin: 0; }
+    }
+    #print-area, #print-area * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .report-paper { width: 210mm; box-sizing: border-box; display: flex; flex-direction: column; background: #fff; position: relative; padding: 3mm 0 8mm; }
+    .lp-head { position: relative; display: flex; height: 128px; background: #99ecfd; border-bottom: 1.5px solid #800000; }
+    .lp-text { flex: 1; padding: 14px 0 0 40px; font-family: Inter, sans-serif; color: #0b2545; }
+    .lp-pan { display: flex; gap: 110px; font-size: 11px; font-weight: 700; }
+    #lp-name { font-size: 28px; font-weight: 800; color: #800000; letter-spacing: .4px; line-height: 1.1; margin: 8px 0 3px; white-space: nowrap; }
+    .lp-addr { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .lp-contact { font-size: 12.5px; font-weight: 700; margin-top: 1px; }
+    .lp-img { width: 330px; background: url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/7QBkUGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAEgcAlAACWRhaXp1b3hpbhwCeAAYU3RldGhvc2NvcGUgb24gdGhlIHRhYmxlHAJuABhHZXR0eSBJbWFnZXMvaVN0b2NrcGhvdG//4QA6RXhpZgAASUkqAAgAAAABAA4BAgAYAAAAGgAAAAAAAABTdGV0aG9zY29wZSBvbiB0aGUgdGFibGX/4QL5aHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLwAJPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KCQk8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczpwaG90b3Nob3A9Imh0dHA6Ly9ucy5hZG9iZS5jb20vcGhvdG9zaG9wLzEuMC8iIHhtbG5zOklwdGM0eG1wQ29yZT0iaHR0cDovL2lwdGMub3JnL3N0ZC9JcHRjNHhtcENvcmUvMS4wL3htbG5zLyIgeG1sbnM6R2V0dHlJbWFnZXNHSUZUPSJodHRwOi8veG1wLmdldHR5aW1hZ2VzLmNvbS9naWZ0LzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGx1cz0iaHR0cDovL25zLnVzZXBsdXMub3JnL2xkZi94bXAvMS4wLyIgeG1sbnM6aXB0Y0V4dD0iaHR0cDovL2lwdGMub3JnL3N0ZC9JcHRjNHhtcEV4dC8yMDA4LTAyLTI5LyIgcGhvdG9zaG9wOkNyZWRpdD0iR2V0dHkgSW1hZ2VzL2lTdG9ja3Bob3RvIiBHZXR0eUltYWdlc0dJRlQ6QXNzZXRJRD0iODk0MTI1NjM4IiA+CjxkYzpjcmVhdG9yPjxyZGY6U2VxPjxyZGY6bGk+ZGFpenVveGluPC9yZGY6bGk+PC9yZGY6U2VxPjwvZGM6Y3JlYXRvcj48ZGM6ZGVzY3JpcHRpb24+PHJkZjpBbHQ+PHJkZjpsaSB4bWw6bGFuZz0ieC1kZWZhdWx0Ij5TdGV0aG9zY29wZSBvbiB0aGUgdGFibGU8L3JkZjpsaT48L3JkZjpBbHQ+PC9kYzpk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) center right / cover no-repeat; }
+    .lp-foot { background: #99ecfd; border-top: 1.5px solid #800000; padding: 9px 40px 18px; break-inside: avoid; position: relative; }
+    .lp-mark { position: absolute; right: 40px; bottom: 4px; font: 600 7px Inter, sans-serif; letter-spacing: .3px; color: #0b2545; opacity: .28; pointer-events: none; }
+    .lp-786 { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); color: #00237a; font: 800 14px Inter, sans-serif; letter-spacing: 1px; line-height: 1; }
+    .lp-foot p { margin: 0; color: #00237a; font-weight: 700; font-size: 10.5px; line-height: 1.55; font-family: 'Noto Sans Devanagari','Tiro Devanagari Hindi',Inter,sans-serif; }
+    #print-area.compact [class*="space-y-"] > * + * { margin-top: .35rem !important; }
+    #print-area.compact td, #print-area.compact th { padding-top: 2px !important; padding-bottom: 2px !important; }
+    #print-area.compact #preview-body { line-height: 1.35; }
+    #preview-body tr, #preview-body p, #preview-body li, #preview-body pre { break-inside: avoid; }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- TOP APP HEADER -->
+  <header class="no-print bg-clinic-navy text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl overflow-hidden shadow-md ring-1 ring-white/20 [&>svg]:w-full [&>svg]:h-full"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#134074"/><stop offset="1" stop-color="#0b2545"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#mg)"/><path d="M17 46V24l15 16 15-16v22" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="19" r="4" fill="#99ecfd"/><circle cx="47" cy="19" r="4" fill="#99ecfd"/><path d="M32 8v12M26 14h12" stroke="#99ecfd" stroke-width="4" stroke-linecap="round"/></svg></div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-wide text-white leading-none font-sans">Medico</h1>
+          <p class="text-xs text-cyan-200 mt-0.5">Clinic &amp; Pathology Reports</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="saveCurrentReport()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Save Draft"><i class="fa-solid fa-bookmark"></i><span class="hidden md:inline">Save Draft</span></button>
+        <button onclick="showSavedModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Saved Reports"><i class="fa-solid fa-folder-open"></i><span class="hidden md:inline">Saved</span> (<span id="saved-count">0</span>)</button>
+        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Print"><i class="fa-solid fa-print"></i><span class="hidden md:inline">Print</span></button>
+                <button id="pdf-btn" onclick="downloadPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-lg flex items-center gap-2"><i class="fa-solid fa-download"></i> Download PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: Dynamic Inputs & Category Selector (lg:col-span-5) -->
+    <section class="no-print lg:col-span-5 flex flex-col space-y-4">
+      
+      <!-- Template Category & Selection Card -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <!-- Category Selector Tabs -->
+        <div class="flex border-b border-slate-200 mb-3">
+          <button id="tab-usg" onclick="switchCategory('usg')" class="flex-1 py-2 text-xs font-bold text-center border-b-2 border-clinic-600 text-clinic-700">
+            <i class="fa-solid fa-vial-circle-check mr-1"></i> USG & Clinical
+          </button>
+          <button id="tab-pathology" onclick="switchCategory('pathology')" class="flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700">
+            <i class="fa-solid fa-microscope mr-1"></i> Pathology Lab
+          </button>
+        </div>
+
+        <label for="template-select" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-file-medical text-clinic-600 mr-1"></i> Select Medical Template
+        </label>
+        <select id="template-select" onchange="switchTemplate(this.value)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-clinic-600 focus:border-clinic-600 p-2.5 font-medium transition">
+          <!-- Populated dynamically via JS -->
+        </select>
+        <div class="mt-3 flex justify-between items-center text-xs">
+          <button onclick="loadDefaultTemplateData()" class="text-clinic-700 hover:underline font-medium flex items-center gap-1">
+            <i class="fa-solid fa-rotate-left"></i> Load Template Defaults
+          </button>
+          <button onclick="clearFormInputs()" class="text-rose-600 hover:underline font-medium flex items-center gap-1">
+            <i class="fa-solid fa-eraser"></i> Clear Form
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic Input Form Container -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex-1 flex flex-col justify-between">
+        <div id="form-fields-container" class="space-y-4 overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
+          <!-- Form controls will be dynamically populated here -->
+        </div>
+
+        <!-- Sign-off -->
+        <div class="mt-6 pt-4 border-t border-slate-200">
+          <label class="block text-xs font-semibold text-slate-600 mb-2">Sign-off: tick everyone who signs this report</label>
+          <div id="signer-list" class="max-h-52 overflow-y-auto pr-1"></div>
+          <details class="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+            <summary class="text-xs font-semibold text-clinic-700 cursor-pointer"><i class="fa-solid fa-user-plus mr-1"></i> Add a doctor / lab technician</summary>
+            <div class="grid gap-1.5 mt-2 text-xs">
+              <input id="st-name" type="text" placeholder="Full name (e.g. Ram Shrestha)" class="w-full border border-slate-300 rounded p-1.5">
+              <input id="st-qual" type="text" placeholder="Qualification / Reg. no. (e.g. BMLT | NHPC 1234)" class="w-full border border-slate-300 rounded p-1.5">
+              <input id="st-role" type="text" placeholder="Designation (e.g. Lab Technician)" class="w-full border border-slate-300 rounded p-1.5">
+              <button type="button" onclick="addStaff()" class="bg-clinic-600 hover:bg-clinic-700 text-white font-semibold rounded p-1.5">Add &amp; select</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Live Print Preview Canvas (lg:col-span-7) -->
+    <section class="lg:col-span-7 flex flex-col items-center">
+      <div class="w-full flex items-center justify-between mb-2 no-print">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+          <i class="fa-solid fa-eye text-clinic-600"></i> Live Document Preview
+        </span>
+        <span class="text-xs text-slate-400">Format: Standard A4 Document</span>
+      </div>
+
+      <!-- PRINT DOCUMENT PAPER CONTAINER -->
+      <div id="paper-scale" class="mx-auto overflow-hidden"><div id="paper-box" style="width:210mm;transform-origin:top left">
+      <div id="print-area" class="report-paper shadow-xl text-slate-900 leading-relaxed font-serif">
+        <div id="letterhead" class="lp-head"><span class="lp-786">786</span>
+          <div class="lp-text">
+            <div class="lp-pan"><span>PAN N0: 304290358</span></div>
+            <h2 id="lp-name">ANSARI MEDICO CLINIC</h2>
+            <p class="lp-addr">PRATAPPUR-9, KHAIRAHANI, NAWALPARASI_W</p>
+            <p class="lp-contact">Mob.: +977- 9847140398, Tel. : 078-400155</p>
+          </div>
+          <div class="lp-img"></div>
+        </div>
+
+        <div class="px-10 pt-6 flex-1">
+          <div id="patient-info-bar" class="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-5 font-sans text-sm grid grid-cols-4 gap-2">
+            <div><span class="text-slate-500 block text-[10px] uppercase font-bold">Patient Name / ID</span><span id="prev-patient-name" class="font-bold text-slate-900">-</span><span id="prev-patient-ref" class="block text-[11px] font-semibold text-slate-600 mt-0.5"></span></div>
+            <div><span class="text-slate-500 block text-[10px] uppercase font-bold">Age / Gender</span><span id="prev-patient-age-sex" class="font-semibold text-slate-800">-</span></div>
+            <div><span id="prev-label-address" class="text-slate-500 block text-[10px] uppercase font-bold">Address</span><span id="prev-patient-address" class="font-semibold text-slate-800">-</span></div>
+            <div><span id="prev-label-date" class="text-slate-500 block text-[10px] uppercase font-bold">Date</span><span id="prev-patient-date" class="font-bold text-slate-900">-</span></div>
+          </div>
+          <div id="report-title-container" class="text-center mb-5">
+            <h3 id="preview-report-title" class="text-xl font-bold uppercase tracking-wider text-slate-800 underline decoration-clinic-600 decoration-2 underline-offset-4 font-sans">ULTRASOUND REPORT</h3>
+          </div>
+          <div id="preview-body" class="space-y-4 text-[13px] text-slate-900"></div>
+        </div>
+
+        <div class="px-10 pt-6 pb-4 font-sans" style="break-inside:avoid">
+          <div id="signature-block-container" class="flex justify-between items-end gap-4"></div>
+        </div>
+        <div class="lp-foot"><p id="lp-foot-text"></p><span class="lp-mark">@Satyam Computer Suppliers</span></div>
+      </div>
+      </div></div>
+    </section>
+  </main>
+
+  <!-- SAVED REPORTS MODAL -->
+  <div id="saved-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[80vh] flex flex-col">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+        <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-folder-open text-clinic-600 mr-2"></i>Saved Patient Reports</h3>
+        <button onclick="closeSavedModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <div id="saved-reports-list" class="flex-1 overflow-y-auto py-4 space-y-2">
+        <!-- List inserted dynamically -->
+      </div>
+      <div class="pt-3 border-t border-slate-200 flex justify-end">
+        <button onclick="closeSavedModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold px-4 py-2 rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State Store
+    let currentCategory = 'usg';
+// ---- Today's Nepali (Bikram Sambat) date, automatic ----
+const BS_MONTH_DAYS = {
+  2080: [31,32,31,32,31,30,30,30,29,29,30,30], 2081: [31,32,31,32,31,30,30,30,29,30,29,31],
+  2082: [31,31,32,31,31,31,30,29,30,29,30,30], 2083: [31,31,32,31,31,31,30,29,30,29,30,30],
+  2084: [31,32,31,32,31,30,30,30,29,29,30,31], 2085: [30,32,31,32,31,30,30,30,29,30,29,31],
+  2086: [31,31,32,31,31,31,30,29,30,29,30,30], 2087: [31,31,32,32,31,30,30,29,30,29,30,30],
+  2088: [31,32,31,32,31,30,30,30,29,29,30,31], 2089: [30,32,31,32,31,31,29,30,29,30,29,31],
+  2090: [31,31,32,31,31,31,30,29,30,29,30,30], 2091: [31,31,32,32,31,30,30,29,30,29,30,30],
+  2092: [31,32,31,32,31,30,30,30,29,29,30,31], 2093: [31,31,31,32,31,31,29,30,30,29,29,31],
+  2094: [31,31,32,31,31,31,30,29,30,29,30,30], 2095: [31,31,32,32,31,30,30,29,30,29,30,30],
+  2096: [31,32,31,32,31,30,30,30,29,29,30,31], 2097: [31,31,31,32,31,31,29,30,30,29,30,30],
+  2098: [31,31,32,31,31,31,30,29,30,29,30,30], 2099: [31,32,31,32,31,30,30,29,30,29,30,30]
+};
+// Anchor: Baisakh 1, 2083 BS = 14 April 2026 AD. Today is read in Nepal time, wherever the device is.
+function getNepaliToday(now) {
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now || new Date()).split('-').map(Number);
+  let days = Math.round((Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(2026, 3, 14)) / 86400000);
+  const total = y => BS_MONTH_DAYS[y].reduce((a, b) => a + b, 0);
+  let y = 2083;
+  while (days < 0) { if (!BS_MONTH_DAYS[y - 1]) return null; y--; days += total(y); }
+  while (BS_MONTH_DAYS[y] && days >= total(y)) { days -= total(y); y++; }
+  if (!BS_MONTH_DAYS[y]) return null;
+  let m = 0;
+  while (days >= BS_MONTH_DAYS[y][m]) { days -= BS_MONTH_DAYS[y][m]; m++; }
+  return { y, m: m + 1, d: days + 1 };
+}
+function getTodayNepaliDate(sep) {
+  const t = getNepaliToday(); if (!t) return '';
+  const z = n => String(n).padStart(2, '0');
+  return t.y + (sep || '-') + z(t.m) + (sep || '-') + z(t.d);
+}
+
+
+// ---- Nepali date picker (popup calendar) ----
+const BS_MONTH_NAMES = ['Baisakh','Jestha','Ashadh','Shrawan','Bhadra','Ashwin','Kartik','Mangsir','Poush','Magh','Falgun','Chaitra'];
+function bsDayOffset(y, m, d) {
+  const tot = yy => BS_MONTH_DAYS[yy].reduce((a, b) => a + b, 0);
+  let n = 0;
+  if (y >= 2083) { for (let i = 2083; i < y; i++) n += tot(i); } else { for (let i = y; i < 2083; i++) n -= tot(i); }
+  for (let i = 0; i < m - 1; i++) n += BS_MONTH_DAYS[y][i];
+  return n + d - 1;
+}
+let bsPick = null;
+function closeBsPicker() { const el = document.getElementById('bs-picker'); if (el) el.remove(); document.removeEventListener('mousedown', bsOutside, true); bsPick = null; }
+function bsOutside(e) { const el = document.getElementById('bs-picker'); if (el && !el.contains(e.target) && !e.target.closest('[title="Pick date"]')) closeBsPicker(); }
+function openBsPicker(btn) {
+  if (document.getElementById('bs-picker')) { closeBsPicker(); return; }
+  const inp = document.getElementById('patient-date-input');
+  const t = getNepaliToday() || { y: 2083, m: 1, d: 1 };
+  const mt = /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/.exec(inp.value.trim());
+  let sel = null;
+  if (mt && BS_MONTH_DAYS[+mt[1]] && +mt[2] >= 1 && +mt[2] <= 12) sel = { y: +mt[1], m: +mt[2], d: +mt[3] };
+  bsPick = { y: (sel || t).y, m: (sel || t).m, sel, today: t };
+  const box = document.createElement('div');
+  box.id = 'bs-picker';
+  box.className = 'fixed z-50 bg-white border border-slate-300 rounded-lg shadow-xl p-2 text-xs font-sans';
+  box.style.width = '244px';
+  document.body.appendChild(box);
+  const r = btn.getBoundingClientRect();
+  box.style.top = Math.min(r.bottom + 4, window.innerHeight - 290) + 'px';
+  box.style.left = Math.max(4, Math.min(r.right - 244, window.innerWidth - 250)) + 'px';
+  renderBsPicker();
+  setTimeout(() => document.addEventListener('mousedown', bsOutside, true), 0);
+}
+function bsMove(delta) {
+  bsPick.m += delta;
+  if (bsPick.m < 1) { bsPick.m = 12; bsPick.y--; } else if (bsPick.m > 12) { bsPick.m = 1; bsPick.y++; }
+  if (!BS_MONTH_DAYS[bsPick.y]) { bsPick.y = Math.max(2080, Math.min(2099, bsPick.y)); }
+  renderBsPicker();
+}
+function bsSet(part, v) { bsPick[part] = +v; renderBsPicker(); }
+function bsChoose(y, m, d) {
+  const z = n => String(n).padStart(2, '0');
+  const val = y + '/' + z(m) + '/' + z(d);
+  const inp = document.getElementById('patient-date-input');
+  if (inp) inp.value = val;
+  updateData('patient', 'date', val);
+  closeBsPicker();
+}
+function renderBsPicker() {
+  const box = document.getElementById('bs-picker'); if (!box) return;
+  const { y, m, sel, today } = bsPick;
+  const len = BS_MONTH_DAYS[y][m - 1];
+  const first = (((2 + bsDayOffset(y, m, 1)) % 7) + 7) % 7;
+  const same = (o, d) => o && o.y === y && o.m === m && o.d === d;
+  let cells = '';
+  for (let i = 0; i < first; i++) cells += '<span></span>';
+  for (let d = 1; d <= len; d++) {
+    const cls = same(sel, d) ? 'bg-clinic-600 text-white' : same(today, d) ? 'border border-clinic-600 text-clinic-700 font-bold hover:bg-slate-100' : 'hover:bg-slate-100';
+    cells += `<button type="button" onclick="bsChoose(${y},${m},${d})" class="h-7 rounded ${cls}">${d}</button>`;
+  }
+  const years = []; for (let i = 2080; i <= 2099; i++) years.push(`<option value="${i}" ${i === y ? 'selected' : ''}>${i}</option>`);
+  const months = BS_MONTH_NAMES.map((n, i) => `<option value="${i + 1}" ${i + 1 === m ? 'selected' : ''}>${n}</option>`).join('');
+  box.innerHTML = `
+    <div class="flex items-center gap-1 mb-2">
+      <button type="button" onclick="bsMove(-1)" class="px-2 py-1 rounded hover:bg-slate-100"><i class="fa-solid fa-chevron-left"></i></button>
+      <select onchange="bsSet('m', this.value)" class="flex-1 border border-slate-300 rounded p-1">${months}</select>
+      <select onchange="bsSet('y', this.value)" class="border border-slate-300 rounded p-1">${years.join('')}</select>
+      <button type="button" onclick="bsMove(1)" class="px-2 py-1 rounded hover:bg-slate-100"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="grid grid-cols-7 gap-0.5 text-center text-[10px] font-bold text-slate-500 mb-1">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(x => `<span>${x}</span>`).join('')}</div>
+    <div class="grid grid-cols-7 gap-0.5 text-center">${cells}</div>
+    <button type="button" onclick="bsChoose(${today.y},${today.m},${today.d})" class="mt-2 w-full py-1 rounded bg-slate-100 hover:bg-slate-200 font-semibold">Today</button>`;
+}
+
+function curGender() {
+  if (currentTemplateKey === 'usg_abdomen') return abdGender(formData.fields);
+  const sx = String(formData.patient.sex || '').trim().toLowerCase();
+  return sx[0] === 'm' ? 'Male' : sx[0] === 'f' ? 'Female' : '';
+}
+function setPatientGender(v) {
+  if (currentTemplateKey === 'usg_abdomen') setAbdGender(v);
+  else updateData('patient', 'sex', v);
+}
+    let currentTemplateKey = 'usg_gravid';
+    let formData = {};
+    let savedReports = JSON.parse(localStorage.getItem('ansari_saved_reports') || '[]');
+
+    // Master Category Structure
+    const TEMPLATE_GROUPS = {
+      usg: [
+        { key: 'usg_gravid', label: 'USG Gravid Uterus (Early Pregnancy)' },
+        { key: 'usg_fetal', label: 'USG Fetal Biometry (2nd/3rd Trimester)' },
+        { key: 'usg_abdomen', label: 'USG Abdomen & Pelvis (General)' },
+        { key: 'usg_breast', label: 'USG Both Breasts' },
+        { key: 'usg_thyroid', label: 'USG Thyroid Gland' },
+        { key: 'clinical_rx', label: 'Clinical Prescription / OPD Note (Rx)' },
+        { key: 'cert_medical', label: 'Medical / Sick Leave Certificate' },
+        { key: 'cert_fitness', label: 'Certificate of Medical Fitness' },
+        { key: 'cert_experience', label: 'Healthcare Experience Certificate' }
+      ],
+      pathology: [
+        { key: 'path_tft', label: 'Thyroid Function Test (TFT Panel)' },
+        { key: 'path_hba1c', label: 'Biochemistry & Diabetes (HbA1c / eAG)' },
+        { key: 'path_general', label: 'General Pathology & Serology Panel (CRP, Vit-B12, etc.)' }
+      ]
+    };
+
+    // Default Datasets for Templates
+    const TEMPLATES = {
+      // --- USG & CLINICAL TEMPLATES ---
+      usg_gravid: {
+        title: "ULTRASOUND OF THE ABDOMEN AND PELVIS (GRAVID UTERUS)",
+        patient: { name: "Sunita Sharma", age: "24", sex: "Female", address: "Khairahani-4", date: "2083/06/16", refBy: "Self" },
+        fields: {
+          sacInfo: "Gravid uterus containing a single gestational sac seen. Embryo and yolk sac is seen.",
+          fhr: "81",
+          subchorionic: "No sub chorionic collection seen. No SOL seen in Uterus myometrium.",
+          crl: "10.92",
+          gaWeeks: "8",
+          gaDays: "3",
+          edd: "2027/05/20",
+          maternalObs: "Maternal: Liver, GB, Spleen & both kidneys are normal.",
+          impression: "Single gestational sac (8 wks 3 days)"
+        }
+      },
+      usg_fetal: {
+        title: "FETAL BIOMETRY USG REPORT",
+        patient: { name: "Pramila Chaudhari", age: "26", sex: "Female", address: "Khairahani", date: "2083/06/24", refBy: "Dr. Ansari" },
+        fields: {
+          bpdCms: "9.2", bpdWks: "38", bpdDays: "3",
+          hcCms: "32.5", hcWks: "37", hcDays: "4",
+          acCms: "31.0", acWks: "35", acDays: "5",
+          flCms: "7.2", flWks: "38", flDays: "5",
+          fetalWeight: "3018", fwTol: "0.2", fhr: "140",
+          placenta: "Anterior", amnioticFluid: "Adequate", afi: "10.7",
+          gaUltrasoundWeeks: "37", gaUltrasoundDays: "4", edd: "2026/10/21",
+          liePresentation: "LONGITUDINAL LIE, CEPHALIC PRESENTATION",
+          internalOs: "CLOSED",
+          impression: "SINGLE LIVE INTRAUTERINE FETUS CORRESPONDING TO 38 WKS 3 DAYS (+- 4 WKS) IN LONGITUDINAL LIE CEPHALIC PRESENTATION. INTERNAL OS CLOSED."
+        }
+      },
+      usg_abdomen: {
+        title: "ULTRASOUND OF THE ABDOMEN AND PELVIS",
+        patient: { name: "Sarita Nepali", age: "32", sex: "Female", address: "Kawasoti", date: "2083/06/27", refBy: "Dr. Ansari" },
+        fields: {
+          gender: "Female",
+          sel: ["liver", "spleen", "gb", "pancreas", "kidneysObs", "ub", "appendix", "ovary", "uterus"],
+          liver: "Liver is normal in size, with normal shape and echogenicity. Biliary radicals are not dilated. No obvious focal lesion. Portal and hepatic veins normal in caliber.",
+          gb: "Gallbladder is normal in size and shape. No calculus seen.",
+          pancreas: "Pancreas is normal in size, shape, position & echotexture. No evidence of mass lesion or calcification.",
+          spleen: "Spleen is normal in size, shape and position. Parenchyma shows normal echotexture. Splenic veins are normal.",
+          kidneysObs: "Both kidneys are normal in size, shape & position. Margins smooth. Cortical thickness & parenchymal echogenicity normal. No mass or calculus seen. No hydronephrosis.",
+          rtKidney: "", ltKidney: "", prostate: "",
+          ub: "Urinary bladder is normal and adequately distended.",
+          appendix: "Appendix is normal.",
+          uterus: "Uterus is normal in size. Endometrial cavity normal. Cervix is mild dilated.",
+          ovary: "Both ovaries normal in size.",
+          impression: "Mild Cervicitis. Rest of abdominal organs appear within normal limits."
+        }
+      },
+      usg_breast: {
+        title: "BREAST ULTRASOUND (USG) REPORT",
+        patient: { name: "Rita Shrestha", age: "35", sex: "Female", address: "Gaindakot", date: "2082/09/15", refBy: "Dr. I. Miya" },
+        fields: {
+          rtBreast: "Rt breast normal in size. A largest mass seen in the 12 o'clock measured about 5×2 mm.",
+          ltBreast: "Lt breast largest mass in seen in the 12 o'clock position, 4 cm away from the nipple measuring 15×8 mm.",
+          lymphNodes: "Lymph nodes with intact fatty hila are seen in both axillae.",
+          impression: "B/L breast mass. Clinical & histological correlation recommended."
+        }
+      },
+      usg_thyroid: {
+        title: "THYROID ULTRASOUND (USG) REPORT",
+        patient: { name: "Maya Thapa", age: "41", sex: "Female", address: "Bharatpur", date: "2081/06/10", refBy: "Self" },
+        fields: {
+          thyroidObs: "Both lobes of thyroid gland and isthmus appear normal in size with multiple hypoechoic, echogenic, calcified lesions noted in the Lt thyroid gland, largest one measuring 9x8.3 mm in right side with vascularity noted within them.",
+          neckVessels: "B/L vessels of the neck, neck spaces are normal.",
+          lymphNodes: "No enlarged lymph nodes seen.",
+          salivaryGlands: "B/L submandibular and parotid glands are normal.",
+          impression: "Enlarged Lt lobe of thyroid gland with multiple hypoechoic, echogenic, calcified papillary cystic lesions.",
+          advice: "ADV: CORRELATION WITH CLINICAL FINDINGS AND CECT NECK WILL BE MORE INFORMATIVE."
+        }
+      },
+      clinical_rx: {
+        title: "CLINICAL PRESCRIPTION & OPD EXAMINATION",
+        patient: { name: "Ram Bahadur Gurung", age: "48", sex: "Male", address: "Khairahani", date: "2083/06/28", refBy: "OPD" },
+        fields: {
+          cc: "Fever x 3 days, dry cough, weakness",
+          bp: "120/80", temp: "99.4", respRate: "18", pulse: "78", spo2: "98", heartRate: "78",
+          lungs: "B/L Clear, no rales/rhonchi", abdomen: "Soft, non-tender",
+          dm: true, htn: false, thyroid: false,
+          oe: "Mild pharyngeal congestion (+)",
+          ph: "No history of past surgeries",
+          dh: "On Metformin 500mg BD",
+          rxList: "1. Tab. Paracetamol 500mg - 1-1-1 (3 days)\n2. Cap. Amoxicillin 500mg - 1-1-1 (5 days)\n3. Cough Syrup - 2 tsf TDS",
+          labTests: ["CBC", "RBS", "USG"]
+        }
+      },
+      cert_medical: {
+        title: "MEDICAL CERTIFICATE / SICK LEAVE",
+        patient: { name: "Mrs. Pabitri Devi Barai", age: "75", sex: "Female", address: "Pratappur-1, Nawalparasi", date: "2026/10/05", refBy: "-" },
+        fields: {
+          relativeName: "Mr. Ashok Kumar Barai",
+          relationType: "son",
+          caregiverName: "Her Husband",
+          diagnosis: "Lt sided weakness due to basal ganglia hemorrhagic stroke",
+          admissionPeriod: "Admitted in Ansari Medico Clinic from 2026/10/05",
+          narrative: "Her surgery is scheduled soon, so it is extremely important for her caregiver to remain with her at this time. Please kindly grant permission to stay with her for the duration of her treatment and care as her condition remains critical.",
+          docSignature: "Dr. Israphil Miya"
+        }
+      },
+      cert_fitness: {
+        title: "CERTIFICATE OF MEDICAL FITNESS",
+        patient: { name: "Shiv Kumari Gurau", age: "27", sex: "Female", address: "Khairahani, Nepal", date: "20 September 2026", refBy: "-" },
+        fields: {
+          parentName: "D/O Ram Prasad Gurau",
+          dutiesFor: "Government / Private Organization",
+          physicallyFit: true,
+          mentallyFit: true,
+          statement: "I have carefully examined the applicant and certify that she is fit both physically and mentally to perform her duties.",
+          docSignature: "Dr. Israphil Miya"
+        }
+      },
+      cert_experience: {
+        title: "EXPERIENCE / EMPLOYMENT CERTIFICATE",
+        patient: { name: "Ms. Yashu Gupta", age: "N/A", sex: "Female", address: "Khairahani, Nepal", date: "18 September 2026", refBy: "-" },
+        fields: {
+          designation: "Healthcare Assistant",
+          startDate: "01 July 2025",
+          endDate: "18 September 2026",
+          duties: [
+            "Assisted doctors and nursing staff in providing quality patient care and supporting clinical services.",
+            "Assessed patients, recorded and monitored vital signs including BP, pulse, temp, SpO2.",
+            "Assisted with wound care, dressing changes, first aid, and basic emergency care including CPR.",
+            "Maintained accurate patient records, treatment notes, and vital sign charts."
+          ],
+          appraisal: "Throughout her employment, Ms. Yashu Gupta demonstrated professionalism, honesty, punctuality, and dedication. We wish her success in her future endeavors."
+        }
+      },
+
+      // --- NEW PATHOLOGY TEMPLATES ---
+      path_tft: {
+        title: "ENDOCRINOLOGY - THYROID FUNCTION TEST (TFT)",
+        patient: { name: "Panmati Chaudhary", age: "35", sex: "Female", address: "Khairahani", date: "2083/06/20", refBy: "Dr. Ansari", labNo: "LAB-830620", specimen: "Serum" },
+        fields: {
+          t3Val: "5.81", t3Ref: "1.23 - 3.07", t3Unit: "nmol/L",
+          t4Val: "14.2", t4Ref: "0.58 - 164", t4Unit: "ng/dL",
+          tshVal: "0.22", tshRef: "0.3 - 4.2", tshUnit: "mIU/L",
+          notes: "Thyroid values evaluated using Automated Chemiluminescence Immunoassay (CLIA)."
+        }
+      },
+      path_hba1c: {
+        title: "BIOCHEMISTRY - HBA1C / GLYCOSYLATED HEMOGLOBIN",
+        patient: { name: "Rajesh Shrestha", age: "42", sex: "Male", address: "Nawalparasi", date: "2082/06/20", refBy: "Dr. I. Miya", labNo: "LAB-820620", specimen: "Whole Blood (EDTA)" },
+        fields: {
+          hba1cVal: "12.4", hba1cRef: "4.0 - 6.0", hba1cUnit: "%",
+          eagVal: "96.80", eagRef: "90 - 120", eagUnit: "mg/dL",
+          notes: "HPLC method standard reference assay. HbA1c level reflects glycemic status over preceding 2-3 months."
+        }
+      },
+      path_general: {
+        title: "GENERAL PATHOLOGY & SEROLOGY PANEL",
+        patient: { name: "Rajesh Shrestha", age: "42", sex: "Male", address: "Khairahani", date: "2082/06/20", refBy: "Dr. Ansari", labNo: "LAB-820621", specimen: "Blood / Serum" },
+        fields: {
+          crpVal: "6.8", crpRef: "0.0 - 6.0", crpUnit: "mg/L",
+          vitB12Val: "340", vitB12Ref: "180 - 914", vitB12Unit: "pg/mL",
+          rbsVal: "115", rbsRef: "70 - 140", rbsUnit: "mg/dL",
+          widalVal: "Negative", widalRef: "Negative (<1:80)", widalUnit: "Titre",
+          mpVal: "Negative", mpRef: "Negative", mpUnit: "Screen",
+          uricAcidVal: "5.4", uricAcidRef: "3.5 - 7.2", uricAcidUnit: "mg/dL",
+          hbsagVal: "Non-Reactive", hbsagRef: "Non-Reactive", hbsagUnit: "Status",
+          hivVal: "Non-Reactive", hivRef: "Non-Reactive", hivUnit: "Status"
+        }
+      }
+    };
+
+    // Initialize App
+    window.onload = () => {
+      updateSavedCount();
+      initMedico();
+      populateDropdown('usg');
+      switchTemplate('usg_gravid');
+    };
+
+    function updateSavedCount() {
+      document.getElementById('saved-count').innerText = savedReports.length;
+    }
+
+    function switchCategory(cat) {
+      currentCategory = cat;
+      const usgTab = document.getElementById('tab-usg');
+      const pathTab = document.getElementById('tab-pathology');
+      
+      if (cat === 'usg') {
+        usgTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-clinic-600 text-clinic-700";
+        pathTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+        setDefaultSigners('usg');
+      } else {
+        pathTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-clinic-600 text-clinic-700";
+        usgTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+        setDefaultSigners('pathology');
+      }
+
+      populateDropdown(cat);
+      const firstKey = TEMPLATE_GROUPS[cat][0].key;
+      switchTemplate(firstKey);
+    }
+
+    function populateDropdown(cat) {
+      const select = document.getElementById('template-select');
+      select.innerHTML = '';
+      TEMPLATE_GROUPS[cat].forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.key;
+        opt.innerText = item.label;
+        select.appendChild(opt);
+      });
+    }
+
+    function switchTemplate(templateKey) {
+      currentTemplateKey = templateKey;
+      formData = JSON.parse(JSON.stringify(TEMPLATES[templateKey]));
+      formData.patient.date = getTodayNepaliDate('/') || formData.patient.date;
+      document.getElementById('preview-report-title').innerText = formData.title;
+      renderFormFields();
+      renderLivePreview();
+    }
+
+    function loadDefaultTemplateData() {
+      switchTemplate(currentTemplateKey);
+    }
+
+    function clearFormInputs() {
+      formData.patient = { name: "", age: "", sex: "", address: "", date: getTodayNepaliDate('/'), refBy: "", labNo: "", specimen: "" };
+      for (let k in formData.fields) {
+        if (typeof formData.fields[k] === 'boolean') formData.fields[k] = false;
+        else if (Array.isArray(formData.fields[k])) formData.fields[k] = [];
+        else formData.fields[k] = "";
+      }
+      renderFormFields();
+      renderLivePreview();
+    }
+
+    // Dynamic Form Builder
+    function renderFormFields() {
+      const container = document.getElementById('form-fields-container');
+      container.innerHTML = '';
+
+      // 1. Patient Demographic Info
+      const pHeader = document.createElement('div');
+      pHeader.className = "text-xs font-bold text-clinic-800 uppercase border-b border-slate-200 pb-1 mb-2";
+      pHeader.innerText = "1. Patient Info & Specimen Details";
+      container.appendChild(pHeader);
+
+      const isPath = currentCategory === 'pathology';
+
+      const pGrid = document.createElement('div');
+      pGrid.className = "grid grid-cols-2 gap-2 text-xs";
+      pGrid.innerHTML = `
+        <div>
+          <label class="block text-slate-600 font-semibold mb-1">Patient Name</label>
+          <input type="text" value="${formData.patient.name || ''}" oninput="updateData('patient', 'name', this.value)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-xs focus:bg-white">
+        </div>
+        <div>
+          <label class="block text-slate-600 font-semibold mb-1">Age / Gender</label>
+          <div class="flex gap-1">
+            <input type="text" placeholder="Age" value="${formData.patient.age || ''}" oninput="updateData('patient', 'age', this.value)" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">
+            <select onchange="setPatientGender(this.value)" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-xs"><option value="">Gender</option><option value="Male" ${curGender() === 'Male' ? 'selected' : ''}>Male</option><option value="Female" ${curGender() === 'Female' ? 'selected' : ''}>Female</option></select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-600 font-semibold mb-1">Referred By</label>
+          <input type="text" placeholder="e.g. Dr. Ansari / Self" value="${abdEsc(formData.patient.refBy)}" oninput="updateData('patient', 'refBy', this.value)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">
+        </div>
+        <div>
+          <label class="block text-slate-600 font-semibold mb-1">${isPath ? 'Date / Lab No.' : 'Date'}</label>
+          <div class="flex gap-1">
+            <div class="relative ${isPath ? 'w-1/2' : 'w-full'}"><input id="patient-date-input" type="text" readonly title="Pick date" placeholder="Date (BS)" value="${formData.patient.date || ''}" onclick="openBsPicker(this)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 pr-7 text-xs cursor-pointer"><button type="button" title="Pick date" onclick="openBsPicker(this)" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-clinic-700"><i class="fa-regular fa-calendar-days"></i></button></div>
+            ${isPath ? `<input type="text" placeholder="Lab No" value="${abdEsc(formData.patient.labNo)}" oninput="updateData('patient', 'labNo', this.value)" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">` : ''}
+          </div>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-slate-600 font-semibold mb-1">${isPath ? 'Specimen / Address' : 'Address'}</label>
+          <input type="text" value="${abdEsc(isPath ? (formData.patient.specimen || formData.patient.address || '') : (formData.patient.address || ''))}" oninput="updateData('patient', '${isPath ? 'specimen' : 'address'}', this.value)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">
+        </div>
+      `;
+      container.appendChild(pGrid);
+
+      // 2. Specific Test Inputs
+      const cHeader = document.createElement('div');
+      cHeader.className = "text-xs font-bold text-clinic-800 uppercase border-b border-slate-200 pb-1 mt-4 mb-2";
+      cHeader.innerText = "2. Test Observations & Parameter Values";
+      container.appendChild(cHeader);
+
+      const fContainer = document.createElement('div');
+      fContainer.className = "space-y-3 text-xs";
+      const f = formData.fields;
+
+      if (currentTemplateKey === 'path_tft') {
+        fContainer.innerHTML = `
+          <div class="p-2 bg-slate-50 rounded border border-slate-200">
+            <span class="font-bold text-slate-700">T3 - Total Triiodothyronine</span>
+            <div class="grid grid-cols-3 gap-2 mt-1">
+              <div><label class="text-[10px] text-slate-500">Result Value</label><input type="text" value="${f.t3Val}" oninput="updateData('fields', 't3Val', this.value)" class="w-full border rounded p-1 font-bold text-cyan-800"></div>
+              <div><label class="text-[10px] text-slate-500">Ref. Range</label><input type="text" value="${f.t3Ref}" oninput="updateData('fields', 't3Ref', this.value)" class="w-full border rounded p-1"></div>
+              <div><label class="text-[10px] text-slate-500">Unit</label><input type="text" value="${f.t3Unit}" oninput="updateData('fields', 't3Unit', this.value)" class="w-full border rounded p-1"></div>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded border border-slate-200">
+            <span class="font-bold text-slate-700">TT4 - Total Thyroxine</span>
+            <div class="grid grid-cols-3 gap-2 mt-1">
+              <div><label class="text-[10px] text-slate-500">Result Value</label><input type="text" value="${f.t4Val}" oninput="updateData('fields', 't4Val', this.value)" class="w-full border rounded p-1 font-bold text-cyan-800"></div>
+              <div><label class="text-[10px] text-slate-500">Ref. Range</label><input type="text" value="${f.t4Ref}" oninput="updateData('fields', 't4Ref', this.value)" class="w-full border rounded p-1"></div>
+              <div><label class="text-[10px] text-slate-500">Unit</label><input type="text" value="${f.t4Unit}" oninput="updateData('fields', 't4Unit', this.value)" class="w-full border rounded p-1"></div>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded border border-slate-200">
+            <span class="font-bold text-slate-700">TSH - Thyroid Stimulating Hormone</span>
+            <div class="grid grid-cols-3 gap-2 mt-1">
+              <div><label class="text-[10px] text-slate-500">Result Value</label><input type="text" value="${f.tshVal}" oninput="updateData('fields', 'tshVal', this.value)" class="w-full border rounded p-1 font-bold text-cyan-800"></div>
+              <div><label class="text-[10px] text-slate-500">Ref. Range</label><input type="text" value="${f.tshRef}" oninput="updateData('fields', 'tshRef', this.value)" class="w-full border rounded p-1"></div>
+              <div><label class="text-[10px] text-slate-500">Unit</label><input type="text" value="${f.tshUnit}" oninput="updateData('fields', 'tshUnit', this.value)" class="w-full border rounded p-1"></div>
+            </div>
+          </div>
+          <div><label class="block font-semibold">Laboratory Notes</label><input type="text" value="${f.notes || ''}" oninput="updateData('fields', 'notes', this.value)" class="w-full border rounded p-1"></div>
+        `;
+      } else if (currentTemplateKey === 'path_hba1c') {
+        fContainer.innerHTML = `
+          <div class="p-2 bg-slate-50 rounded border border-slate-200">
+            <span class="font-bold text-slate-700">HbA1c (Glycosylated Hemoglobin)</span>
+            <div class="grid grid-cols-3 gap-2 mt-1">
+              <div><label class="text-[10px] text-slate-500">Result (%)</label><input type="text" value="${f.hba1cVal}" oninput="updateData('fields', 'hba1cVal', this.value)" class="w-full border rounded p-1 font-bold text-rose-700"></div>
+              <div><label class="text-[10px] text-slate-500">Ref. Range</label><input type="text" value="${f.hba1cRef}" oninput="updateData('fields', 'hba1cRef', this.value)" class="w-full border rounded p-1"></div>
+              <div><label class="text-[10px] text-slate-500">Unit</label><input type="text" value="${f.hba1cUnit}" oninput="updateData('fields', 'hba1cUnit', this.value)" class="w-full border rounded p-1"></div>
+            </div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded border border-slate-200">
+            <span class="font-bold text-slate-700">Estimated Average Glucose (eAG)</span>
+            <div class="grid grid-cols-3 gap-2 mt-1">
+              <div><label class="text-[10px] text-slate-500">Result Value</label><input type="text" value="${f.eagVal}" oninput="updateData('fields', 'eagVal', this.value)" class="w-full border rounded p-1 font-bold text-rose-700"></div>
+              <div><label class="text-[10px] text-slate-500">Ref. Range</label><input type="text" value="${f.eagRef}" oninput="updateData('fields', 'eagRef', this.value)" class="w-full border rounded p-1"></div>
+              <div><label class="text-[10px] text-slate-500">Unit</label><input type="text" value="${f.eagUnit}" oninput="updateData('fields', 'eagUnit', this.value)" class="w-full border rounded p-1"></div>
+            </div>
+          </div>
+          <div><label class="block font-semibold">Clinical Guidance / Notes</label><input type="text" value="${f.notes || ''}" oninput="updateData('fields', 'notes', this.value)" class="w-full border rounded p-1"></div>
+        `;
+      } else if (currentTemplateKey === 'path_general') {
+        fContainer.innerHTML = `
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block font-semibold text-slate-700">CRP (C-Reactive Protein)</label><input type="text" placeholder="Value (e.g. 6.8 mg/L)" value="${f.crpVal}" oninput="updateData('fields', 'crpVal', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">Vitamin B12</label><input type="text" placeholder="Value (e.g. 340 pg/mL)" value="${f.vitB12Val}" oninput="updateData('fields', 'vitB12Val', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">Random Blood Sugar (RBS)</label><input type="text" placeholder="Value" value="${f.rbsVal}" oninput="updateData('fields', 'rbsVal', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">Uric Acid</label><input type="text" placeholder="Value" value="${f.uricAcidVal}" oninput="updateData('fields', 'uricAcidVal', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">Widal Test</label><input type="text" value="${f.widalVal}" oninput="updateData('fields', 'widalVal', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">Malarial Parasite (MP)</label><input type="text" value="${f.mpVal}" oninput="updateData('fields', 'mpVal', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">HBsAg</label><input type="text" value="${f.hbsagVal}" oninput="updateData('fields', 'hbsagVal', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block font-semibold text-slate-700">HIV 1 & 2</label><input type="text" value="${f.hivVal}" oninput="updateData('fields', 'hivVal', this.value)" class="w-full border rounded p-1"></div>
+          </div>
+        `;
+      } else {
+        // Fallback for USG / Clinical fields
+        return renderUsgFields(fContainer, f);
+      }
+
+      container.appendChild(fContainer);
+    }
+
+    // ===== USG Abdomen & Pelvis: gender -> organ checklist -> write-up boxes =====
+    const ABD_ORGANS = [
+      { k: 'liver',      label: 'Liver',           pv: 'LIVER',           def: 'Liver is normal in size, shape and echogenicity. Biliary radicals are not dilated. No obvious focal lesion.' },
+      { k: 'spleen',     label: 'Spleen',          pv: 'SPLEEN',          def: 'Spleen is normal in size, shape and position. Parenchyma shows normal echotexture.' },
+      { k: 'gb',         label: 'Gallbladder',     pv: 'GALLBLADDER',     def: 'Gallbladder is normal in size and shape. No calculus seen.' },
+      { k: 'pancreas',   label: 'Pancreas',        pv: 'PANCREAS',        def: 'Pancreas is normal in size, shape, position & echotexture. No mass lesion or calcification.' },
+      { k: 'kidneysObs', label: 'Both Kidney',     pv: 'BOTH KIDNEYS',    def: 'Both kidneys are normal in size, shape & position. Cortical thickness & parenchymal echogenicity normal. No mass, calculus or hydronephrosis.' },
+      { k: 'rtKidney',   label: 'Right Kidney',    pv: 'RIGHT KIDNEY',    def: 'Right kidney is normal in size, shape & position. Cortical thickness & parenchymal echogenicity normal. No mass, calculus or hydronephrosis.' },
+      { k: 'ltKidney',   label: 'Left Kidney',     pv: 'LEFT KIDNEY',     def: 'Left kidney is normal in size, shape & position. Cortical thickness & parenchymal echogenicity normal. No mass, calculus or hydronephrosis.' },
+      { k: 'ub',         label: 'Urinary Bladder', pv: 'URINARY BLADDER', def: 'Urinary bladder is normal and adequately distended. No calculus or mass.' },
+      { k: 'appendix',   label: 'Appendix',        pv: 'APPENDIX',        def: 'Appendix is normal.' },
+      { k: 'prostate',   label: 'Prostate',        pv: 'PROSTATE',        only: 'Male',   def: 'Prostate is normal in size, shape and echotexture. No focal lesion.' },
+      { k: 'ovary',      label: 'Ovary',           pv: 'OVARY',           only: 'Female', def: 'Both ovaries are normal in size and echotexture.' },
+      { k: 'uterus',     label: 'Uterus',          pv: 'UTERUS',          only: 'Female', def: 'Uterus is normal in size, shape and echotexture. Endometrial cavity normal.' }
+    ];
+    function abdEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+    function abdGender(f) {
+      if (f.gender === 'Male' || f.gender === 'Female') return f.gender;
+      const sx = (formData.patient.sex || '').trim().toLowerCase();
+      return sx[0] === 'm' ? 'Male' : sx[0] === 'f' ? 'Female' : '';
+    }
+    function abdOrgans(f) { const g = abdGender(f); return ABD_ORGANS.filter(o => !o.only || o.only === g); }
+    function setAbdGender(g) {
+      const f = formData.fields;
+      f.gender = g; formData.patient.sex = g;
+      const ok = ABD_ORGANS.filter(o => !o.only || o.only === g).map(o => o.k);
+      f.sel = (f.sel || []).filter(k => ok.includes(k));
+      renderFormFields(); renderLivePreview();
+    }
+    function toggleAbdOrgan(k, on) {
+      const f = formData.fields;
+      f.sel = f.sel || [];
+      if (on && !f.sel.includes(k)) f.sel.push(k);
+      if (!on) f.sel = f.sel.filter(x => x !== k);
+      renderFormFields(); renderLivePreview();
+    }
+    function abdFormHtml(f) {
+      const g = abdGender(f), sel = f.sel || [];
+      if (!g) return `<p class="text-slate-500">Select Gender beside Age (in Patient Info above) to see the organ list.</p>`;
+      let html = '';
+      const organs = abdOrgans(f);
+      html += `<div><label class="block font-semibold text-slate-700 mb-1">Select organs to report</label><div class="grid grid-cols-2 gap-x-3 gap-y-1">` +
+        organs.map(o => `<label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" ${sel.includes(o.k) ? 'checked' : ''} onchange="toggleAbdOrgan('${o.k}', this.checked)"><span>${o.label}</span></label>`).join('') + `</div></div>`;
+      const chosen = organs.filter(o => sel.includes(o.k));
+      html += chosen.map(o => `<div><label class="block font-medium">${o.label}</label><textarea rows="2" placeholder="${abdEsc(o.def)}" oninput="updateData('fields', '${o.k}', this.value)" class="w-full border rounded p-1 placeholder:text-slate-300 placeholder:italic">${abdEsc(f[o.k])}</textarea></div>`).join('');
+      html += `<div><label class="block font-semibold">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1 font-semibold">${abdEsc(f.impression)}</textarea></div>`;
+      return html;
+    }
+
+    // Helper for USG fields
+    function renderUsgFields(fContainer, f) {
+      if (currentTemplateKey === 'usg_gravid') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium text-slate-700">Gestational Sac / Embryo</label><textarea rows="2" oninput="updateData('fields', 'sacInfo', this.value)" class="w-full border rounded p-1.5">${f.sacInfo}</textarea></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block font-medium text-slate-700">FHR (b/p/m)</label><input type="text" value="${f.fhr}" oninput="updateData('fields', 'fhr', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium text-slate-700">CRL (mm)</label><input type="text" value="${f.crl}" oninput="updateData('fields', 'crl', this.value)" class="w-full border rounded p-1.5"></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block font-medium text-slate-700">GA (Weeks)</label><input type="text" value="${f.gaWeeks}" oninput="updateData('fields', 'gaWeeks', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium text-slate-700">GA (Days)</label><input type="text" value="${f.gaDays}" oninput="updateData('fields', 'gaDays', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium text-slate-700">EDD</label><input type="text" value="${f.edd}" oninput="updateData('fields', 'edd', this.value)" class="w-full border rounded p-1.5"></div>
+          </div>
+          <div><label class="block font-semibold text-slate-800">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1.5 font-semibold">${f.impression}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'usg_fetal') {
+        fContainer.innerHTML = `
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-slate-600">BPD (cm/wks/day)</label><input type="text" placeholder="CMS" value="${f.bpdCms}" oninput="updateData('fields', 'bpdCms', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="WKS" value="${f.bpdWks}" oninput="updateData('fields', 'bpdWks', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="DAY" value="${f.bpdDays}" oninput="updateData('fields', 'bpdDays', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block text-slate-600">HC (cm/wks/day)</label><input type="text" placeholder="CMS" value="${f.hcCms}" oninput="updateData('fields', 'hcCms', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="WKS" value="${f.hcWks}" oninput="updateData('fields', 'hcWks', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="DAY" value="${f.hcDays}" oninput="updateData('fields', 'hcDays', this.value)" class="w-full border rounded p-1"></div>
+            <div><label class="block text-slate-600">AC (cm/wks/day)</label><input type="text" placeholder="CMS" value="${abdEsc(f.acCms)}" oninput="updateData('fields', 'acCms', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="WKS" value="${abdEsc(f.acWks)}" oninput="updateData('fields', 'acWks', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="DAY" value="${abdEsc(f.acDays)}" oninput="updateData('fields', 'acDays', this.value)" class="w-full border rounded p-1"></div>
+             <div><label class="block text-slate-600">FL (cm/wks/day)</label><input type="text" placeholder="CMS" value="${f.flCms}" oninput="updateData('fields', 'flCms', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="WKS" value="${f.flWks}" oninput="updateData('fields', 'flWks', this.value)" class="w-full border rounded p-1 mb-1"><input type="text" placeholder="DAY" value="${f.flDays}" oninput="updateData('fields', 'flDays', this.value)" class="w-full border rounded p-1"></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block font-medium">Fetal Weight (gms)</label><input type="text" value="${abdEsc(f.fetalWeight)}" oninput="updateData('fields', 'fetalWeight', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium">Weight ± (gms)</label><input type="text" value="${abdEsc(f.fwTol)}" oninput="updateData('fields', 'fwTol', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium">Fetal Heart Rate (beats/min)</label><input type="text" value="${abdEsc(f.fhr)}" oninput="updateData('fields', 'fhr', this.value)" class="w-full border rounded p-1.5"></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block font-medium">Placenta</label><select onchange="updateData('fields', 'placenta', this.value)" class="w-full border rounded p-1.5 bg-white"><option value="">Select</option>${['Anterior', 'Posterior'].concat(f.placenta && !['Anterior', 'Posterior'].includes(f.placenta) ? [f.placenta] : []).map(o => `<option value="${abdEsc(o)}" ${f.placenta === o ? 'selected' : ''}>${abdEsc(o)}</option>`).join('')}</select></div>
+            <div><label class="block font-medium">Amniotic Fluid</label><input type="text" placeholder="e.g. Adequate" value="${abdEsc(f.amnioticFluid)}" oninput="updateData('fields', 'amnioticFluid', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium">AFI (ML)</label><input type="text" placeholder="e.g. 10.7" value="${abdEsc(f.afi)}" oninput="updateData('fields', 'afi', this.value)" class="w-full border rounded p-1.5"></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block font-medium">GA by Ultrasound (weeks)</label><input type="text" value="${abdEsc(f.gaUltrasoundWeeks)}" oninput="updateData('fields', 'gaUltrasoundWeeks', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium">GA (days)</label><input type="text" value="${abdEsc(f.gaUltrasoundDays)}" oninput="updateData('fields', 'gaUltrasoundDays', this.value)" class="w-full border rounded p-1.5"></div>
+            <div><label class="block font-medium">EDD</label><input type="text" placeholder="2026/10/21" value="${abdEsc(f.edd)}" oninput="updateData('fields', 'edd', this.value)" class="w-full border rounded p-1.5"></div>
+          </div>
+          <div><label class="block font-semibold">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1.5 font-semibold">${f.impression}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'usg_abdomen') {
+        fContainer.innerHTML = abdFormHtml(f);
+      } else if (currentTemplateKey === 'usg_breast') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium">Right Breast Findings</label><textarea rows="2" oninput="updateData('fields', 'rtBreast', this.value)" class="w-full border rounded p-1">${f.rtBreast}</textarea></div>
+          <div><label class="block font-medium">Left Breast Findings</label><textarea rows="2" oninput="updateData('fields', 'ltBreast', this.value)" class="w-full border rounded p-1">${f.ltBreast}</textarea></div>
+          <div><label class="block font-semibold">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1 font-semibold">${f.impression}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'usg_thyroid') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium">Thyroid Gland Findings</label><textarea rows="3" oninput="updateData('fields', 'thyroidObs', this.value)" class="w-full border rounded p-1">${f.thyroidObs}</textarea></div>
+          <div><label class="block font-semibold">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1 font-semibold">${f.impression}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'clinical_rx') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium text-slate-700">Chief Complaints (C/C)</label><input type="text" value="${f.cc}" oninput="updateData('fields', 'cc', this.value)" class="w-full border rounded p-1"></div>
+          <div><label class="block font-medium text-slate-700">Prescription (Rx Notes)</label><textarea rows="4" oninput="updateData('fields', 'rxList', this.value)" class="w-full border border-emerald-600 rounded p-1.5 font-mono text-xs">${f.rxList}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'cert_medical') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium">Clinical Diagnosis</label><input type="text" value="${f.diagnosis}" oninput="updateData('fields', 'diagnosis', this.value)" class="w-full border rounded p-1 font-semibold"></div>
+          <div><label class="block font-medium">Certificate Request Narrative</label><textarea rows="4" oninput="updateData('fields', 'narrative', this.value)" class="w-full border rounded p-1.5">${f.narrative}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'cert_fitness') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium">Medical Certificate Statement</label><textarea rows="3" oninput="updateData('fields', 'statement', this.value)" class="w-full border rounded p-1.5">${f.statement}</textarea></div>
+        `;
+      } else if (currentTemplateKey === 'cert_experience') {
+        fContainer.innerHTML = `
+          <div><label class="block font-medium">Designation / Role</label><input type="text" value="${f.designation}" oninput="updateData('fields', 'designation', this.value)" class="w-full border rounded p-1"></div>
+          <div><label class="block font-medium">Appraisal & Remarks</label><textarea rows="3" oninput="updateData('fields', 'appraisal', this.value)" class="w-full border rounded p-1.5">${f.appraisal}</textarea></div>
+        `;
+      }
+      document.getElementById('form-fields-container').appendChild(fContainer);
+    }
+
+    function updateData(section, key, val) {
+      if (section === 'patient') {
+        formData.patient[key] = val;
+      } else if (section === 'fields') {
+        formData.fields[key] = val;
+      }
+      renderLivePreview();
+    }
+
+    // Render Clean Printable Preview
+    function renderLivePreview() {
+      // Patient header updates
+      document.getElementById('prev-patient-name').innerText = formData.patient.name || '-';
+      document.getElementById('prev-patient-ref').innerText = formData.patient.refBy ? 'Ref. By: ' + formData.patient.refBy : '';
+      document.getElementById('prev-patient-age-sex').innerText = `${formData.patient.age || '-'} Yrs / ${formData.patient.sex || '-'}`;
+      
+      const isPath = currentCategory === 'pathology';
+      document.getElementById('prev-label-address').innerText = isPath ? 'Address / Specimen' : 'Address';
+      document.getElementById('prev-label-date').innerText = isPath ? 'Date / Lab No.' : 'Date';
+      if (isPath) {
+        document.getElementById('prev-patient-address').innerText = `${formData.patient.specimen || 'Serum / Blood'}`;
+        document.getElementById('prev-patient-date').innerText = `${formData.patient.date || '-'} | ${formData.patient.labNo || 'LAB-8300'}`;
+      } else {
+        document.getElementById('prev-patient-address').innerText = formData.patient.address || '-';
+        document.getElementById('prev-patient-date').innerText = formData.patient.date || '-';
+      }
+
+      const body = document.getElementById('preview-body');
+      const f = formData.fields;
+
+      if (currentTemplateKey === 'path_tft') {
+        body.innerHTML = `
+          <div class="space-y-5">
+            <table class="w-full text-xs text-left border-collapse border border-slate-300">
+              <thead>
+                <tr class="bg-slate-100 text-slate-800 font-sans uppercase">
+                  <th class="border border-slate-300 p-2">TEST DESCRIPTION</th>
+                  <th class="border border-slate-300 p-2 text-center">RESULT</th>
+                  <th class="border border-slate-300 p-2 text-center">REF. RANGE</th>
+                  <th class="border border-slate-300 p-2 text-center">UNIT</th>
+                </tr>
+              </thead>
+              <tbody class="font-sans">
+                <tr>
+                  <td class="border border-slate-300 p-2 font-semibold">Triiodothyronine Total (T3)</td>
+                  <td class="border border-slate-300 p-2 text-center font-bold text-cyan-800">${f.t3Val}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.t3Ref}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.t3Unit}</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-300 p-2 font-semibold">Thyroxine - Total (TT4)</td>
+                  <td class="border border-slate-300 p-2 text-center font-bold text-cyan-800">${f.t4Val}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.t4Ref}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.t4Unit}</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-300 p-2 font-semibold">Thyroid Stimulating Hormone (TSH)</td>
+                  <td class="border border-slate-300 p-2 text-center font-bold text-cyan-800">${f.tshVal}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.tshRef}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.tshUnit}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Interpretation Guide Table -->
+            <div class="mt-4">
+              <p class="text-xs font-bold font-sans uppercase text-slate-700 mb-1">TSH / T4 / T3 Diagnostic Interpretation Summary:</p>
+              <table class="w-full text-[11px] text-left border-collapse border border-slate-300 font-sans">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-700">
+                    <th class="border border-slate-300 p-1.5">TSH</th>
+                    <th class="border border-slate-300 p-1.5">T4</th>
+                    <th class="border border-slate-300 p-1.5">T3</th>
+                    <th class="border border-slate-300 p-1.5 font-bold">INTERPRETATION</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-700">
+                  <tr><td class="border border-slate-300 p-1">High</td><td class="border border-slate-300 p-1">Normal</td><td class="border border-slate-300 p-1">Normal</td><td class="border border-slate-300 p-1 font-semibold text-amber-700">Mild Hypothyroidism</td></tr>
+                  <tr><td class="border border-slate-300 p-1">High</td><td class="border border-slate-300 p-1">Low</td><td class="border border-slate-300 p-1">Low or Normal</td><td class="border border-slate-300 p-1 font-semibold text-rose-700">Hypothyroidism</td></tr>
+                  <tr><td class="border border-slate-300 p-1">Low</td><td class="border border-slate-300 p-1">Normal</td><td class="border border-slate-300 p-1">Normal</td><td class="border border-slate-300 p-1 font-semibold text-amber-700">Mild Hyperthyroidism</td></tr>
+                  <tr><td class="border border-slate-300 p-1">Low</td><td class="border border-slate-300 p-1">High or Normal</td><td class="border border-slate-300 p-1">High or Normal</td><td class="border border-slate-300 p-1 font-semibold text-rose-700">Hyperthyroidism</td></tr>
+                  <tr><td class="border border-slate-300 p-1">Low</td><td class="border border-slate-300 p-1">Low or Normal</td><td class="border border-slate-300 p-1">Low or Normal</td><td class="border border-slate-300 p-1 italic">Non-thyroidal illness / Rare pituitary disease</td></tr>
+                </tbody>
+              </table>
+            </div>
+            ${f.notes ? `<p class="text-xs font-sans italic text-slate-500 mt-2">Note: ${f.notes}</p>` : ''}
+          </div>
+        `;
+      } else if (currentTemplateKey === 'path_hba1c') {
+        body.innerHTML = `
+          <div class="space-y-5">
+            <table class="w-full text-xs text-left border-collapse border border-slate-300 font-sans">
+              <thead>
+                <tr class="bg-slate-100 uppercase">
+                  <th class="border border-slate-300 p-2">TEST DESCRIPTION</th>
+                  <th class="border border-slate-300 p-2 text-center">RESULT</th>
+                  <th class="border border-slate-300 p-2 text-center">REF. RANGE</th>
+                  <th class="border border-slate-300 p-2 text-center">UNIT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-slate-300 p-2 font-bold">HbA1c (Glycosylated Hemoglobin)</td>
+                  <td class="border border-slate-300 p-2 text-center font-bold text-rose-700 text-sm">${f.hba1cVal}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.hba1cRef}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.hba1cUnit}</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-300 p-2 font-bold">Estimated Average Glucose (eAG)</td>
+                  <td class="border border-slate-300 p-2 text-center font-bold text-slate-900">${f.eagVal}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.eagRef}</td>
+                  <td class="border border-slate-300 p-2 text-center">${f.eagUnit}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- HbA1c Clinical Control Reference Table -->
+            <div class="mt-4">
+              <p class="text-xs font-bold font-sans uppercase text-slate-700 mb-1">HbA1c Clinical Guidance & Glycemic Control Reference:</p>
+              <table class="w-full text-xs text-left border-collapse border border-slate-300 font-sans">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-700">
+                    <th class="border border-slate-300 p-1.5">HbA1c LEVEL</th>
+                    <th class="border border-slate-300 p-1.5 font-bold">GLYCEMIC CONTROL / INTERPRETATION</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-700">
+                  <tr><td class="border border-slate-300 p-1.5 font-bold text-emerald-700">&lt; 6.0 %</td><td class="border border-slate-300 p-1.5">Normal Level</td></tr>
+                  <tr><td class="border border-slate-300 p-1.5 font-bold text-emerald-600">6.0 - 7.0 %</td><td class="border border-slate-300 p-1.5">Near Normal Glycemia / Goal for most diabetics</td></tr>
+                  <tr><td class="border border-slate-300 p-1.5 font-bold text-amber-600">7.0 - 8.0 %</td><td class="border border-slate-300 p-1.5">Sub-optimal Control / Monitor closely</td></tr>
+                  <tr><td class="border border-slate-300 p-1.5 font-bold text-rose-700">&gt; 8.0 %</td><td class="border border-slate-300 p-1.5 text-rose-700 font-bold">Action Suggested / Poor Glycemic Control</td></tr>
+                </tbody>
+              </table>
+            </div>
+            ${f.notes ? `<p class="text-xs font-sans italic text-slate-500 mt-2">Note: ${f.notes}</p>` : ''}
+          </div>
+        `;
+      } else if (currentTemplateKey === 'path_general') {
+        body.innerHTML = `
+          <div class="space-y-4 font-sans">
+            <table class="w-full text-xs text-left border-collapse border border-slate-300">
+              <thead>
+                <tr class="bg-slate-100 uppercase text-slate-800">
+                  <th class="border border-slate-300 p-2">SEROLOGY & BIOCHEMISTRY PARAMETER</th>
+                  <th class="border border-slate-300 p-2 text-center">RESULT</th>
+                  <th class="border border-slate-300 p-2 text-center">REFERENCE RANGE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td class="border border-slate-300 p-2 font-semibold">C-Reactive Protein (CRP)</td><td class="border border-slate-300 p-2 text-center font-bold">${f.crpVal} mg/L</td><td class="border border-slate-300 p-2 text-center">${f.crpRef}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">Vitamin B12</td><td class="border border-slate-300 p-2 text-center font-bold">${f.vitB12Val} pg/mL</td><td class="border border-slate-300 p-2 text-center">${f.vitB12Ref}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">Random Blood Sugar (RBS)</td><td class="border border-slate-300 p-2 text-center font-bold">${f.rbsVal} mg/dL</td><td class="border border-slate-300 p-2 text-center">${f.rbsRef}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">Uric Acid</td><td class="border border-slate-300 p-2 text-center font-bold">${f.uricAcidVal} mg/dL</td><td class="border border-slate-300 p-2 text-center">${f.uricAcidRef}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">Widal Test (Typhoid)</td><td class="border border-slate-300 p-2 text-center font-bold">${f.widalVal}</td><td class="border border-slate-300 p-2 text-center">${f.widalRef}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">Malarial Parasite (MP)</td><td class="border border-slate-300 p-2 text-center font-bold">${f.mpVal}</td><td class="border border-slate-300 p-2 text-center">${f.mpRef}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">HBsAg (Hepatitis B Surface Antigen)</td><td class="border border-slate-300 p-2 text-center font-bold text-emerald-700">${f.hbsagVal}</td><td class="border border-slate-300 p-2 text-center">${f.hbsagRef}</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-semibold">HIV 1 & 2 Rapid Screening</td><td class="border border-slate-300 p-2 text-center font-bold text-emerald-700">${f.hivVal}</td><td class="border border-slate-300 p-2 text-center">${f.hivRef}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else {
+        // Fallback render for previous USG templates
+        return renderUsgPreview(body, f);
+      }
+    }
+
+    function renderUsgPreview(body, f) {
+      if (currentTemplateKey === 'usg_gravid') {
+        body.innerHTML = `
+          <div class="space-y-3">
+            <p>${f.sacInfo || ''}</p>
+            <p>Regular cardiac activity noted (FHR = <strong>${f.fhr || ''}</strong> b/p/m).</p>
+            <p>${f.subchorionic || ''}</p>
+            <div class="my-4 bg-slate-50 p-3 rounded border border-slate-200">
+              <p class="font-bold text-xs uppercase mb-1">Gestational Age by Ultrasound:</p>
+              <p>CRL = <strong>${f.crl || ''} mm</strong> = <strong>${f.gaWeeks || ''} weeks ${f.gaDays || ''} days</strong></p>
+              <p class="mt-1">EDD = <strong>${f.edd || ''}</strong></p>
+            </div>
+            <p>${f.maternalObs || ''}</p>
+            <div class="mt-6 pt-3 border-t-2 border-slate-800">
+              <p class="font-bold text-sm text-slate-900">IMPRESSION:</p>
+              <p class="font-bold text-base text-clinic-navy mt-1">${f.impression || ''}</p>
+            </div>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'usg_fetal') {
+        body.innerHTML = `
+          <div class="space-y-4">
+            <table class="w-full text-xs text-left border-collapse border border-slate-300">
+              <thead>
+                <tr class="bg-slate-100">
+                  <th class="border border-slate-300 p-2">PARAM</th>
+                  <th class="border border-slate-300 p-2">MEASUREMENT</th>
+                  <th class="border border-slate-300 p-2">GA (WEEKS)</th>
+                  <th class="border border-slate-300 p-2">DAYS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td class="border border-slate-300 p-2 font-bold">BPD</td><td class="border border-slate-300 p-2">${f.bpdCms} CMS</td><td class="border border-slate-300 p-2">${f.bpdWks} WKS</td><td class="border border-slate-300 p-2">${f.bpdDays} DAYS</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-bold">HC</td><td class="border border-slate-300 p-2">${f.hcCms} CMS</td><td class="border border-slate-300 p-2">${f.hcWks} WKS</td><td class="border border-slate-300 p-2">${f.hcDays} DAYS</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-bold">AC</td><td class="border border-slate-300 p-2">${f.acCms} CMS</td><td class="border border-slate-300 p-2">${f.acWks} WKS</td><td class="border border-slate-300 p-2">${f.acDays} DAYS</td></tr>
+                <tr><td class="border border-slate-300 p-2 font-bold">FL</td><td class="border border-slate-300 p-2">${f.flCms} CMS</td><td class="border border-slate-300 p-2">${f.flWks} WKS</td><td class="border border-slate-300 p-2">${f.flDays} DAYS</td></tr>
+              </tbody>
+            </table>
+            <div class="bg-slate-50 p-3 border border-slate-200 text-xs leading-6" style="display:grid;grid-template-columns:max-content 1fr;column-gap:10px">
+              <span>Fetal Weight</span><span>= <strong>${abdEsc(f.fetalWeight)} gms</strong>${String(f.fwTol || '').trim() ? ' (±' + abdEsc(f.fwTol) + ')' : ''}</span>
+              <span>Fetal Heart Rate</span><span>= <strong>${abdEsc(f.fhr)} beats/min</strong></span>
+              <span>Placenta</span><span>= <strong>${abdEsc(f.placenta)}</strong></span>
+              <span>Amniotic Fluid</span><span>= <strong>${abdEsc(f.amnioticFluid)}</strong>${String(f.afi || '').trim() ? ' (AFI: ' + abdEsc(f.afi) + ' ML)' : ''}</span>
+              <span>GA by Ultrasound</span><span>= <strong>${abdEsc(f.gaUltrasoundWeeks)}</strong> weeks &nbsp; <strong>${abdEsc(f.gaUltrasoundDays)}</strong> day</span>
+              <span>EDD</span><span>= <strong>${abdEsc(f.edd)}</strong></span>
+            </div>
+            <div class="pt-3 border-t-2 border-slate-800">
+              <p class="font-bold text-xs uppercase">IMPRESSION:</p>
+              <p class="font-bold text-sm text-clinic-navy mt-1">${f.impression}</p>
+            </div>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'usg_abdomen') {
+        const _abd = abdOrgans(f).filter(o => (f.sel || []).includes(o.k) && String(f[o.k] || '').trim());
+        body.innerHTML = `
+          <div class="space-y-4 text-[13px] leading-6">
+            ${_abd.map(o => `<p><strong>${o.pv}:</strong> ${abdEsc(f[o.k]).replace(/\n/g, '<br>')}</p>`).join('')}
+            <div class="mt-10 pt-4 border-t border-slate-800">
+              <p class="font-bold uppercase">IMPRESSION:</p>
+              <p class="font-bold text-sm text-clinic-navy mt-1.5">${abdEsc(f.impression).replace(/\n/g, '<br>')}</p>
+            </div>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'usg_breast') {
+        body.innerHTML = `
+          <div class="space-y-4">
+            <div><p class="font-bold text-clinic-navy">RIGHT BREAST:</p><p>${f.rtBreast}</p></div>
+            <div><p class="font-bold text-clinic-navy">LEFT BREAST:</p><p>${f.ltBreast}</p></div>
+            <div class="mt-6 pt-3 border-t-2 border-slate-800">
+              <p class="font-bold uppercase">IMPRESSION:</p>
+              <p class="font-bold text-sm text-clinic-navy mt-1">${f.impression}</p>
+            </div>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'usg_thyroid') {
+        body.innerHTML = `
+          <div class="space-y-3">
+            <p><strong>THYROID GLAND:</strong> ${f.thyroidObs}</p>
+            <div class="mt-4 pt-3 border-t-2 border-slate-800">
+              <p class="font-bold uppercase">IMPRESSION:</p>
+              <p class="font-bold text-sm text-clinic-navy mt-1">${f.impression}</p>
+            </div>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'clinical_rx') {
+        body.innerHTML = `
+          <div class="space-y-4">
+            <p><strong>C/C:</strong> ${f.cc}</p>
+            <div class="my-4 border-l-4 border-emerald-600 pl-3 py-1">
+              <p class="font-bold text-emerald-800 text-base font-sans">Rx (Treatment Notes):</p>
+              <pre class="font-serif text-sm whitespace-pre-wrap mt-2">${f.rxList}</pre>
+            </div>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'cert_medical') {
+        body.innerHTML = `
+          <div class="space-y-4 leading-relaxed font-serif text-slate-800">
+            <p class="font-bold text-base">TO WHOM IT MAY CONCERN,</p>
+            <p class="text-justify">This is to certify that <strong>${formData.patient.name}</strong> has been diagnosed with <strong class="underline">${f.diagnosis}</strong>.</p>
+            <p class="text-justify">${f.narrative}</p>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'cert_fitness') {
+        body.innerHTML = `
+          <div class="space-y-6 leading-relaxed font-serif text-slate-800 py-4">
+            <p class="text-justify">${f.statement}</p>
+          </div>
+        `;
+      } else if (currentTemplateKey === 'cert_experience') {
+        body.innerHTML = `
+          <div class="space-y-4 leading-relaxed font-serif text-slate-800">
+            <p class="font-bold text-base">TO WHOM IT MAY CONCERN</p>
+            <p class="text-justify">This is to certify that <strong>${formData.patient.name}</strong> was employed as a <strong>${f.designation}</strong>.</p>
+            <p class="text-justify pt-2">${f.appraisal}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Storage System
+    function saveCurrentReport() {
+      const reportItem = {
+        id: Date.now(),
+        category: currentCategory,
+        templateKey: currentTemplateKey,
+        patientName: formData.patient.name || 'Unnamed Patient',
+        date: formData.patient.date || getTodayNepaliDate('/') || new Date().toISOString().split('T')[0],
+        data: JSON.parse(JSON.stringify(formData)),
+        signers: signers.slice()
+      };
+      savedReports.unshift(reportItem);
+      localStorage.setItem('ansari_saved_reports', JSON.stringify(savedReports));
+      updateSavedCount();
+      alert('Report saved to local database successfully!');
+    }
+
+    function showSavedModal() {
+      const container = document.getElementById('saved-reports-list');
+      if (savedReports.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-6 text-sm">No saved reports found.</p>`;
+      } else {
+        container.innerHTML = savedReports.map(item => `
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-slate-800 text-sm">${item.patientName}</p>
+              <p class="text-xs text-slate-500">${TEMPLATES[item.templateKey]?.title || item.templateKey} | Date: ${item.date}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="loadSavedReport(${item.id})" class="bg-clinic-600 hover:bg-clinic-700 text-white text-xs px-2.5 py-1.5 rounded">Load</button>
+              <button onclick="deleteSavedReport(${item.id})" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-2.5 py-1.5 rounded"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `).join('');
+      }
+      document.getElementById('saved-modal').classList.remove('hidden');
+    }
+
+    function closeSavedModal() {
+      document.getElementById('saved-modal').classList.add('hidden');
+    }
+
+    function loadSavedReport(id) {
+      const item = savedReports.find(r => r.id === id);
+      if (item) {
+        if (item.category && item.category !== currentCategory) {
+          switchCategory(item.category);
+        }
+        currentTemplateKey = item.templateKey;
+        formData = JSON.parse(JSON.stringify(item.data));
+        if (item.signers) { signers = item.signers.slice(); renderSignerPanel(); renderSignatures(); }
+        document.getElementById('template-select').value = currentTemplateKey;
+        document.getElementById('preview-report-title').innerText = formData.title;
+        renderFormFields();
+        renderLivePreview();
+        closeSavedModal();
+      }
+    }
+
+    function deleteSavedReport(id) {
+      savedReports = savedReports.filter(r => r.id !== id);
+      localStorage.setItem('ansari_saved_reports', JSON.stringify(savedReports));
+      updateSavedCount();
+      showSavedModal();
+    }
+
+    // ===== Medico additions =====
+    const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#134074"/><stop offset="1" stop-color="#0b2545"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#mg)"/><path d="M17 46V24l15 16 15-16v22" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="19" r="4" fill="#99ecfd"/><circle cx="47" cy="19" r="4" fill="#99ecfd"/><path d="M32 8v12M26 14h12" stroke="#99ecfd" stroke-width="4" stroke-linecap="round"/></svg>`;
+    const FOOT = { usg: "अन्सारी मेडिको क्लिनिक, प्रतापपुर-९, खैरहनी, नेपाल। हामीकहाँ USG, ECG, X-RAY, LAB, OXYGEN, NEBULIZER, PHYSIOTHERAPY सेवा उपलब्ध छ। साथै बाथ रोग, साइटिका, नसा रोग, छारे रोग (मिर्गी), प्यारालाइसिस, थाइराइड, सेतो दाग, मृगौलामा पथरी र नपुंसकताको विशेष उपचार गरिन्छ। प्रत्येक बुधबार अनुभवी डाक्टरद्वारा पाइल्स र फिस्टुलाको आयुर्वेदिक तथा क्षारसूत्र विधिबाट उपचार गरिन्छ।", pathology: "अन्सारी मेडिको क्लिनिक, प्रतापपुर-९, खैरहनी, नेपाल। हामीकहाँ USG, ECG, X-RAY, LAB, OXYGEN, NEBULIZER, PHYSIOTHERAPY सेवा उपलब्ध छ। साथै बाथ रोग, साइटिका, प्यारालाइसिसको विशेष उपचार गरिन्छ।" };
+    const DEFAULT_STAFF = [
+      { id: 'miya', name: 'Dr. Israphil Miya', qual: 'BAMS (TU) | NAMC No. 658', role: 'General Physician & Medical Director' },
+      { id: 'ansari', name: 'Dr. Israphil Ansari', qual: 'BAMS (TU) | NAMC No. 658', role: 'General Physician' },
+      { id: 'lab1', name: 'Lab Technician', qual: 'Medical Laboratory Dept.', role: 'Pathology In-charge' },
+      { id: 'lab2', name: 'Senior Lab Technician', qual: 'Clinical Biochemist', role: 'Ansari Pathology' },
+      { id: 'lab3', name: 'Lab Assistant', qual: 'Medical Laboratory Dept.', role: 'Ansari Pathology' }
+    ];
+    let staff = DEFAULT_STAFF.slice(), signers = [];
+    const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    function initMedico() {
+      try { const st = JSON.parse(localStorage.getItem('medico_staff') || 'null'); if (Array.isArray(st) && st.length) staff = st; } catch (e) {}
+      setDefaultSigners('usg');
+      setupInstall();
+      window.addEventListener('resize', scalePreview);
+      if (document.fonts) document.fonts.ready.then(() => fitPaper());
+    }
+    function saveStaff() { try { localStorage.setItem('medico_staff', JSON.stringify(staff)); } catch (e) {} }
+    function setDefaultSigners(cat) {
+      signers = [cat === 'pathology' ? 'lab1' : 'miya'];
+      applyLetterpad(cat); renderSignerPanel(); renderSignatures();
+    }
+    function applyLetterpad(cat) {
+      const p = cat === 'pathology';
+      document.getElementById('lp-name').innerText = p ? 'ANSARI PATHOLOGY' : 'ANSARI MEDICO CLINIC';
+      document.getElementById('lp-foot-text').innerText = p ? FOOT.pathology : FOOT.usg;
+    }
+    function renderSignerPanel() {
+      document.getElementById('signer-list').innerHTML = staff.map(p => `
+        <label class="flex items-start gap-2 text-xs p-1.5 rounded hover:bg-slate-50 cursor-pointer">
+          <input type="checkbox" class="mt-0.5" ${signers.includes(p.id) ? 'checked' : ''} onchange="toggleSigner('${p.id}')">
+          <span class="flex-1"><b class="text-slate-800">${esc(p.name)}</b><br><span class="text-slate-500">${esc(p.role)}</span></span>
+          ${p.custom ? `<button type="button" title="Remove" onclick="event.preventDefault();removeStaff('${p.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>` : ''}
+        </label>`).join('');
+    }
+    function toggleSigner(id) { signers = signers.includes(id) ? signers.filter(x => x !== id) : [...signers, id]; renderSignatures(); fitPaper(); }
+    function addStaff() {
+      const v = k => document.getElementById(k).value.trim();
+      if (!v('st-name')) { alert('Enter a name first.'); return; }
+      const p = { id: 'c' + Date.now(), name: v('st-name'), qual: v('st-qual'), role: v('st-role'), custom: true };
+      staff.push(p); signers.push(p.id); saveStaff();
+      ['st-name', 'st-qual', 'st-role'].forEach(k => document.getElementById(k).value = '');
+      renderSignerPanel(); renderSignatures(); fitPaper();
+    }
+    function removeStaff(id) {
+      staff = staff.filter(p => p.id !== id); signers = signers.filter(x => x !== id);
+      saveStaff(); renderSignerPanel(); renderSignatures(); fitPaper();
+    }
+    function renderSignatures() {
+      const list = signers.map(id => staff.find(p => p.id === id)).filter(Boolean);
+      const notice = list.length > 2 ? '' : currentCategory === 'pathology'
+        ? `<div class="text-[11px] text-slate-500"><p class="font-bold text-slate-700">Ansari Pathology Lab Services</p><p class="text-[9px] text-slate-400 mt-0.5">Validated against quality control standards.</p></div>`
+        : `<div class="text-[11px] text-slate-500 font-nepali"><p>मानव सेवा नै ईश्वर सेवा हो! स्वस्थ रहनुहोस्, खुसी रहनुहोस्।</p><p class="text-[9px] text-slate-400 mt-0.5">Ansari Medico Clinic Generated Report</p></div>`;
+      const boxes = list.map(p => `
+        <div class="text-center min-w-[150px] flex-1 max-w-[220px]">
+          <div class="h-10 border-b border-dashed border-slate-400 mb-1"></div>
+          <p class="font-bold text-xs text-slate-900">${esc(p.name)}</p>
+          ${p.qual ? `<p class="text-[10.5px] text-slate-600">${esc(p.qual)}</p>` : ''}
+          ${p.role ? `<p class="text-[10px] text-slate-500 font-semibold">${esc(p.role)}</p>` : ''}
+        </div>`).join('');
+      document.getElementById('signature-block-container').innerHTML = notice + `<div class="flex flex-wrap justify-end gap-4 ml-auto">${boxes}</div>`;
+    }
+
+    // Keep the footer on the page: tighten spacing if only slightly over, and
+    // size the paper to whole A4 pages so the footer sits at the bottom of the last one.
+    function fitPaper() {
+      const el = document.getElementById('print-area'); if (!el) return;
+      const mm = v => v * 96 / 25.4, P1 = mm(297), PN = mm(287);
+      el.classList.remove('compact'); el.style.minHeight = '0px';
+      let h = el.scrollHeight;
+      if (h > P1 - 1 && h < P1 * 1.12) { el.classList.add('compact'); if (el.scrollHeight > P1 - 1) el.classList.remove('compact'); }
+      h = el.scrollHeight;
+      const n = h <= P1 - 1 ? 1 : 1 + Math.ceil((h - (P1 - 1)) / PN);
+      el.style.minHeight = (P1 + (n - 1) * PN - 1) + 'px';
+      scalePreview();
+    }
+    function scalePreview() {
+      const wrap = document.getElementById('paper-scale'), box = document.getElementById('paper-box'); if (!wrap) return;
+      const s = Math.min(1, wrap.parentElement.clientWidth / box.offsetWidth);
+      box.style.transform = `scale(${s})`;
+      wrap.style.width = (box.offsetWidth * s) + 'px';
+      wrap.style.height = (box.offsetHeight * s) + 'px';
+    }
+    const _renderLivePreview = renderLivePreview;
+    renderLivePreview = function () { _renderLivePreview(); fitPaper(); };
+
+    // PDF that downloads straight to the phone
+    async function downloadPDF() {
+      if (!window.html2canvas || !window.jspdf) { alert('PDF tools are still loading. Check your internet and try again.'); return; }
+      const btn = document.getElementById('pdf-btn'), label = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparing...';
+      try {
+        fitPaper();
+        const canvas = await html2canvas(document.getElementById('print-area'), {
+          scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1100,
+          onclone: d => {
+            d.getElementById('paper-scale').style.cssText = 'width:auto;height:auto;overflow:visible';
+            d.getElementById('paper-box').style.transform = 'none';
+          }
+        });
+        const { jsPDF } = window.jspdf, pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        const W = canvas.width, k = W / 210; let y = 0, page = 0;
+        while (y < canvas.height - 2) {
+          const sh = Math.min(Math.round((page ? 287 : 297) * k), canvas.height - y);
+          const c = document.createElement('canvas'); c.width = W; c.height = sh;
+          c.getContext('2d').drawImage(canvas, 0, y, W, sh, 0, 0, W, sh);
+          if (page) pdf.addPage();
+          pdf.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, page ? 10 : 0, 210, sh / k);
+          y += sh; page++;
+        }
+        const nm = (formData.patient.name || 'report').replace(/[^\w]+/g, '_');
+        pdf.save('Medico_' + nm + '_' + currentTemplateKey + '.pdf');
+      } catch (e) { alert('Could not create the PDF. Try Print instead.'); }
+      btn.disabled = false; btn.innerHTML = label;
+    }
+
+    function setupInstall() {
+      if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
