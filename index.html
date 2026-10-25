@@ -146,17 +146,19 @@
     if (!cfg || !cfg.pins) { fail('Setup error: pins.js is missing or has a typo (check commas and quotes).'); return; }
     var months = cfg.months || 3, list = [];
     cfg.pins.forEach(function (line) {
-      var m = String(line).trim().match(/^(\d{6})[\s,]+(\d{4})-(\d{1,2})-(\d{1,2})$/);
-      if (!m) return;
-      var from = m[2] + '-' + p2(+m[3]) + '-' + p2(+m[4]);
-      list.push({ pin: m[1], from: from, to: addMonths(from, months), id: m[1] + '|' + from });
+      var dg = String(line).replace(/\D/g, '');
+      if (dg.length !== 25) return;
+      var y = dg.substr(16, 4), mo = +dg.substr(20, 2), dy = +dg.substr(22, 2);
+      if (mo < 1 || mo > 12 || dy < 1 || dy > 31 || +y < 2000) return;
+      var from = y + '-' + p2(mo) + '-' + p2(dy), pin = dg.substr(10, 6);
+      list.push({ pin: pin, from: from, to: addMonths(from, months), id: pin + '|' + from });
     });
     function activePins() { return list.filter(function (p) { return today >= p.from && today <= p.to; }); }
     function unlock(id) { ls('s', KEY, id); ls('r', FKEY); document.documentElement.classList.remove('pin-locked'); }
     var active = activePins(), saved = ls('g', KEY);
     if (saved && active.some(function (p) { return p.id === saved; })) { unlock(saved); return; }
     ls('r', KEY);
-    if (!list.length) { fail('No valid PIN lines found in pins.js. Each line must look like "123456 2026-10-25".'); return; }
+    if (!list.length) { fail('No valid PIN lines found in pins.js. Each line must be a 25-digit number.'); return; }
     if (!active.length) {
       var nextFrom = list.map(function (p) { return p.from; }).filter(function (d) { return d > today; }).sort()[0];
       fail('No PIN is active today.<br><span style="font-size:12px;color:#64748b">Device date: ' + today + (nextFrom ? ' &middot; next PIN starts ' + nextFrom : ' &middot; all PINs have expired') + '</span>');
