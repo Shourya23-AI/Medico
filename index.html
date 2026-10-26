@@ -200,8 +200,8 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button onclick="saveCurrentReport()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Save Draft"><i class="fa-solid fa-bookmark"></i><span class="hidden md:inline">Save Draft</span></button>
-        <button onclick="showSavedModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Saved Reports"><i class="fa-solid fa-folder-open"></i><span class="hidden md:inline">Saved</span> (<span id="saved-count">0</span>)</button>
+        <button onclick="saveCurrentReport()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Save this document"><i class="fa-solid fa-bookmark"></i><span class="hidden md:inline">Save</span></button>
+        <button onclick="showSavedModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Saved Documents"><i class="fa-solid fa-folder-open"></i><span class="hidden md:inline">Saved</span> (<span id="saved-count">0</span>)</button>
         <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Print"><i class="fa-solid fa-print"></i><span class="hidden md:inline">Print</span></button>
                 <button id="pdf-btn" onclick="downloadPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-lg flex items-center gap-2"><i class="fa-solid fa-download"></i> Download PDF</button>
       </div>
@@ -309,21 +309,30 @@
     </section>
   </main>
 
-  <!-- SAVED REPORTS MODAL -->
-  <div id="saved-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[80vh] flex flex-col">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-200">
-        <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-folder-open text-clinic-600 mr-2"></i>Saved Patient Reports</h3>
-        <button onclick="closeSavedModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-      </div>
-      <div id="saved-reports-list" class="flex-1 overflow-y-auto py-4 space-y-2">
-        <!-- List inserted dynamically -->
-      </div>
-      <div class="pt-3 border-t border-slate-200 flex justify-end">
-        <button onclick="closeSavedModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold px-4 py-2 rounded-lg">Close</button>
+  <!-- SAVED DOCUMENTS PAGE -->
+  <div id="saved-modal" class="no-print fixed inset-0 bg-slate-100 hidden z-50 overflow-y-auto">
+    <div class="sticky top-0 z-10 bg-clinic-navy text-white shadow">
+      <div class="max-w-5xl mx-auto px-3 sm:px-4 py-3 flex flex-wrap items-center gap-2">
+        <button onclick="closeSavedModal()" class="bg-white/10 hover:bg-white/20 text-sm px-3 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <h2 class="text-lg font-bold flex-1 min-w-[10rem]"><i class="fa-solid fa-folder-open text-cyan-200 mr-2"></i>Saved Documents <span id="sd-total" class="text-cyan-200 text-sm font-semibold"></span></h2>
+        <button onclick="exportBackup()" class="bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5" title="Download all saved documents as one file"><i class="fa-solid fa-download"></i> Backup</button>
+        <button onclick="document.getElementById('restore-file').click()" class="bg-cyan-600 hover:bg-cyan-500 text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5" title="Recover everything from a backup file"><i class="fa-solid fa-rotate-left"></i> Restore</button>
+        <input id="restore-file" type="file" accept=".json,application/json" class="hidden" onchange="restoreBackup(this)">
       </div>
     </div>
+    <div class="max-w-5xl mx-auto px-3 sm:px-4 py-4">
+      <div class="flex flex-wrap gap-2 items-center mb-3">
+        <div class="relative flex-1 min-w-[12rem]">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input id="sd-search" type="text" placeholder="Search by patient name, report type or date" oninput="renderSavedPage()" class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm">
+        </div>
+        <div id="sd-filters" class="flex gap-1 text-xs font-semibold"></div>
+      </div>
+      <p id="sd-status" class="text-xs text-slate-500 mb-3"></p>
+      <div id="saved-reports-list" class="space-y-2"></div>
+    </div>
   </div>
+  <div id="toast" class="no-print fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg"></div>
 
   <script>
     // State Store
@@ -444,7 +453,7 @@ function setPatientGender(v) {
 }
     let currentTemplateKey = 'usg_gravid';
     let formData = {};
-    let savedReports = JSON.parse(localStorage.getItem('ansari_saved_reports') || '[]');
+    let savedReports = []; let currentSavedId = null; let sdFilter = 'all';
 
     // Master Category Structure
     const TEMPLATE_GROUPS = {
@@ -514,6 +523,7 @@ function setPatientGender(v) {
           rtKidney: "", ltKidney: "", prostate: "",
           ub: "Urinary bladder is normal and adequately distended.",
           appendix: "Appendix is normal.",
+          otherComment: "",
           uterus: "Uterus is normal in size. Endometrial cavity normal. Cervix is mild dilated.",
           ovary: "Both ovaries normal in size.",
           impression: "Mild Cervicitis. Rest of abdominal organs appear within normal limits."
@@ -636,6 +646,7 @@ function setPatientGender(v) {
 
     // Initialize App
     window.onload = () => {
+      initStorage();
       updateSavedCount();
       initMedico();
       populateDropdown('usg');
@@ -678,6 +689,7 @@ function setPatientGender(v) {
     }
 
     function switchTemplate(templateKey) {
+      currentSavedId = null;
       currentTemplateKey = templateKey;
       formData = JSON.parse(JSON.stringify(TEMPLATES[templateKey]));
       formData.patient.date = getTodayNepaliDate('/') || formData.patient.date;
@@ -719,12 +731,12 @@ function setPatientGender(v) {
       pGrid.innerHTML = `
         <div>
           <label class="block text-slate-600 font-semibold mb-1">Patient Name</label>
-          <input type="text" value="${formData.patient.name || ''}" oninput="updateData('patient', 'name', this.value)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-xs focus:bg-white">
+          <input type="text" value="${abdEsc(formData.patient.name)}" oninput="updateData('patient', 'name', this.value)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-xs focus:bg-white">
         </div>
         <div>
           <label class="block text-slate-600 font-semibold mb-1">Age / Gender</label>
           <div class="flex gap-1">
-            <input type="text" placeholder="Age" value="${formData.patient.age || ''}" oninput="updateData('patient', 'age', this.value)" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">
+            <input type="text" placeholder="Age" value="${abdEsc(formData.patient.age)}" oninput="updateData('patient', 'age', this.value)" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">
             <select onchange="setPatientGender(this.value)" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-xs"><option value="">Gender</option><option value="Male" ${curGender() === 'Male' ? 'selected' : ''}>Male</option><option value="Female" ${curGender() === 'Female' ? 'selected' : ''}>Female</option></select>
           </div>
         </div>
@@ -826,19 +838,22 @@ function setPatientGender(v) {
     }
 
     // ===== USG Abdomen & Pelvis: gender -> organ checklist -> write-up boxes =====
+    // Order here = order of the checklist AND of the printed report.
+    // Male:   Liver, Gallbladder, Pancreas, Spleen, Both/Right/Left Kidney, Urinary Bladder, Prostate, Appendix
+    // Female: Liver, Gallbladder, Pancreas, Spleen, Both/Right/Left Kidney, Urinary Bladder, Appendix, Uterus, Ovary
     const ABD_ORGANS = [
       { k: 'liver',      label: 'Liver',           pv: 'LIVER',           def: 'Liver is normal in size, shape and echogenicity. Biliary radicals are not dilated. No obvious focal lesion.' },
-      { k: 'spleen',     label: 'Spleen',          pv: 'SPLEEN',          def: 'Spleen is normal in size, shape and position. Parenchyma shows normal echotexture.' },
       { k: 'gb',         label: 'Gallbladder',     pv: 'GALLBLADDER',     def: 'Gallbladder is normal in size and shape. No calculus seen.' },
       { k: 'pancreas',   label: 'Pancreas',        pv: 'PANCREAS',        def: 'Pancreas is normal in size, shape, position & echotexture. No mass lesion or calcification.' },
+      { k: 'spleen',     label: 'Spleen',          pv: 'SPLEEN',          def: 'Spleen is normal in size, shape and position. Parenchyma shows normal echotexture.' },
       { k: 'kidneysObs', label: 'Both Kidney',     pv: 'BOTH KIDNEYS',    def: 'Both kidneys are normal in size, shape & position. Cortical thickness & parenchymal echogenicity normal. No mass, calculus or hydronephrosis.' },
       { k: 'rtKidney',   label: 'Right Kidney',    pv: 'RIGHT KIDNEY',    def: 'Right kidney is normal in size, shape & position. Cortical thickness & parenchymal echogenicity normal. No mass, calculus or hydronephrosis.' },
       { k: 'ltKidney',   label: 'Left Kidney',     pv: 'LEFT KIDNEY',     def: 'Left kidney is normal in size, shape & position. Cortical thickness & parenchymal echogenicity normal. No mass, calculus or hydronephrosis.' },
       { k: 'ub',         label: 'Urinary Bladder', pv: 'URINARY BLADDER', def: 'Urinary bladder is normal and adequately distended. No calculus or mass.' },
-      { k: 'appendix',   label: 'Appendix',        pv: 'APPENDIX',        def: 'Appendix is normal.' },
       { k: 'prostate',   label: 'Prostate',        pv: 'PROSTATE',        only: 'Male',   def: 'Prostate is normal in size, shape and echotexture. No focal lesion.' },
-      { k: 'ovary',      label: 'Ovary',           pv: 'OVARY',           only: 'Female', def: 'Both ovaries are normal in size and echotexture.' },
-      { k: 'uterus',     label: 'Uterus',          pv: 'UTERUS',          only: 'Female', def: 'Uterus is normal in size, shape and echotexture. Endometrial cavity normal.' }
+      { k: 'appendix',   label: 'Appendix',        pv: 'APPENDIX',        def: 'Appendix is normal.' },
+      { k: 'uterus',     label: 'Uterus',          pv: 'UTERUS',          only: 'Female', def: 'Uterus is normal in size, shape and echotexture. Endometrial cavity normal.' },
+      { k: 'ovary',      label: 'Ovary',           pv: 'OVARY',           only: 'Female', def: 'Both ovaries are normal in size and echotexture.' }
     ];
     function abdEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
     function abdGender(f) {
@@ -870,6 +885,7 @@ function setPatientGender(v) {
         organs.map(o => `<label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" ${sel.includes(o.k) ? 'checked' : ''} onchange="toggleAbdOrgan('${o.k}', this.checked)"><span>${o.label}</span></label>`).join('') + `</div></div>`;
       const chosen = organs.filter(o => sel.includes(o.k));
       html += chosen.map(o => `<div><label class="block font-medium">${o.label}</label><textarea rows="2" placeholder="${abdEsc(o.def)}" oninput="updateData('fields', '${o.k}', this.value)" class="w-full border rounded p-1 placeholder:text-slate-300 placeholder:italic">${abdEsc(f[o.k])}</textarea></div>`).join('');
+      html += `<div><label class="block font-semibold text-slate-700">Other comment <span class="font-normal text-slate-400">(optional)</span></label><textarea rows="2" placeholder="Any extra finding or remark. Printed just above the Impression." oninput="updateData('fields', 'otherComment', this.value)" class="w-full border rounded p-1 placeholder:text-slate-300 placeholder:italic">${abdEsc(f.otherComment)}</textarea></div>`;
       html += `<div><label class="block font-semibold">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1 font-semibold">${abdEsc(f.impression)}</textarea></div>`;
       return html;
     }
@@ -1175,6 +1191,7 @@ function setPatientGender(v) {
         body.innerHTML = `
           <div class="space-y-4 text-[13px] leading-6">
             ${_abd.map(o => `<p><strong>${o.pv}:</strong> ${abdEsc(f[o.k]).replace(/\n/g, '<br>')}</p>`).join('')}
+            ${String(f.otherComment || '').trim() ? `<p><strong>OTHER COMMENT:</strong> ${abdEsc(f.otherComment).replace(/\n/g, '<br>')}</p>` : ''}
             <div class="mt-10 pt-4 border-t border-slate-800">
               <p class="font-bold uppercase">IMPRESSION:</p>
               <p class="font-bold text-sm text-clinic-navy mt-1.5">${abdEsc(f.impression).replace(/\n/g, '<br>')}</p>
@@ -1237,10 +1254,80 @@ function setPatientGender(v) {
       }
     }
 
-    // Storage System
-    function saveCurrentReport() {
-      const reportItem = {
-        id: Date.now(),
+    // ===== Storage System =====
+    // Every document is kept in two places on this device:
+    //   1) IndexedDB  (main store, survives restarts, large capacity)
+    //   2) localStorage (automatic mirror copy; if one store is ever lost, the other refills it on next open)
+    // "Backup" downloads everything as one file; "Restore" brings it all back with one click.
+    const DB_NAME = 'medico_db', DB_STORE = 'reports', LS_KEY = 'ansari_saved_reports';
+    let _db = null;
+
+    function toast(msg) {
+      const t = document.getElementById('toast'); if (!t) return;
+      t.textContent = msg; t.classList.remove('hidden');
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), 2600);
+    }
+    function lsReadReports() { try { const a = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+    function lsWriteReports() { try { localStorage.setItem(LS_KEY, JSON.stringify(savedReports)); return true; } catch (e) { return false; } }
+    function idbOpen() {
+      return new Promise(res => {
+        if (_db) return res(_db);
+        if (!window.indexedDB) return res(null);
+        try {
+          const rq = indexedDB.open(DB_NAME, 1);
+          rq.onupgradeneeded = () => { rq.result.createObjectStore(DB_STORE, { keyPath: 'id' }); };
+          rq.onsuccess = () => { _db = rq.result; res(_db); };
+          rq.onerror = () => res(null);
+          rq.onblocked = () => res(null);
+        } catch (e) { res(null); }
+      });
+    }
+    async function idbAll() {
+      const db = await idbOpen(); if (!db) return [];
+      return new Promise(res => { try { const rq = db.transaction(DB_STORE).objectStore(DB_STORE).getAll(); rq.onsuccess = () => res(rq.result || []); rq.onerror = () => res([]); } catch (e) { res([]); } });
+    }
+    async function idbPut(recs) {
+      const db = await idbOpen(); if (!db) return false;
+      return new Promise(res => { try { const tx = db.transaction(DB_STORE, 'readwrite'), st = tx.objectStore(DB_STORE); recs.forEach(r => st.put(r)); tx.oncomplete = () => res(true); tx.onerror = tx.onabort = () => res(false); } catch (e) { res(false); } });
+    }
+    async function idbDelete(id) {
+      const db = await idbOpen(); if (!db) return false;
+      return new Promise(res => { try { const tx = db.transaction(DB_STORE, 'readwrite'); tx.objectStore(DB_STORE).delete(id); tx.oncomplete = () => res(true); tx.onerror = tx.onabort = () => res(false); } catch (e) { res(false); } });
+    }
+    // Merge lists by id; the most recently saved copy wins.
+    function mergeReports(...lists) {
+      const m = new Map();
+      lists.flat().forEach(r => {
+        if (!r || r.id == null || !r.data || !r.templateKey) return;
+        const o = m.get(r.id);
+        if (!o || (r.savedAt || 0) > (o.savedAt || 0)) m.set(r.id, r);
+      });
+      return [...m.values()].sort((x, y) => (y.savedAt || y.id) - (x.savedAt || x.id));
+    }
+    async function initStorage() {
+      savedReports = mergeReports(lsReadReports());
+      updateSavedCount();
+      const fromDb = await idbAll();
+      const merged = mergeReports(fromDb, lsReadReports());
+      savedReports = merged;
+      lsWriteReports();
+      await idbPut(merged);                 // refills whichever store was missing documents
+      updateSavedCount();
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    }
+    async function persistRecord(rec) {
+      const okLs = lsWriteReports();
+      const okDb = await idbPut([rec]);
+      return okLs || okDb;
+    }
+
+    async function saveCurrentReport() {
+      const now = Date.now();
+      const existing = currentSavedId != null ? savedReports.find(r => r.id === currentSavedId) : null;
+      const rec = {
+        id: existing ? existing.id : now,
+        savedAt: now,
+        createdAt: existing ? (existing.createdAt || existing.id) : now,
         category: currentCategory,
         templateKey: currentTemplateKey,
         patientName: formData.patient.name || 'Unnamed Patient',
@@ -1248,59 +1335,121 @@ function setPatientGender(v) {
         data: JSON.parse(JSON.stringify(formData)),
         signers: signers.slice()
       };
-      savedReports.unshift(reportItem);
-      localStorage.setItem('ansari_saved_reports', JSON.stringify(savedReports));
+      if (existing) savedReports = savedReports.map(r => r.id === rec.id ? rec : r);
+      else savedReports.unshift(rec);
+      savedReports = mergeReports(savedReports);
+      currentSavedId = rec.id;
       updateSavedCount();
-      alert('Report saved to local database successfully!');
+      const ok = await persistRecord(rec);
+      toast(ok ? (existing ? 'Document updated and saved on this device' : 'Document saved on this device')
+               : 'Could not save: browser storage is blocked or full. Use Backup.');
+    }
+
+    function updateSavedCount() {
+      const el = document.getElementById('saved-count'); if (el) el.innerText = savedReports.length;
     }
 
     function showSavedModal() {
-      const container = document.getElementById('saved-reports-list');
-      if (savedReports.length === 0) {
-        container.innerHTML = `<p class="text-center text-slate-400 py-6 text-sm">No saved reports found.</p>`;
-      } else {
-        container.innerHTML = savedReports.map(item => `
-          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
-            <div>
-              <p class="font-bold text-slate-800 text-sm">${item.patientName}</p>
-              <p class="text-xs text-slate-500">${TEMPLATES[item.templateKey]?.title || item.templateKey} | Date: ${item.date}</p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="loadSavedReport(${item.id})" class="bg-clinic-600 hover:bg-clinic-700 text-white text-xs px-2.5 py-1.5 rounded">Load</button>
-              <button onclick="deleteSavedReport(${item.id})" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-2.5 py-1.5 rounded"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-        `).join('');
-      }
       document.getElementById('saved-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      renderSavedPage();
     }
-
     function closeSavedModal() {
       document.getElementById('saved-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    function setSdFilter(f) { sdFilter = f; renderSavedPage(); }
+
+    function renderSavedPage() {
+      const list = document.getElementById('saved-reports-list');
+      const q = (document.getElementById('sd-search').value || '').trim().toLowerCase();
+      document.getElementById('sd-total').textContent = '(' + savedReports.length + ')';
+      const nUsg = savedReports.filter(r => r.category !== 'pathology').length, nPath = savedReports.length - nUsg;
+      const chip = (k, label) => `<button onclick="setSdFilter('${k}')" class="px-3 py-1.5 rounded-full border ${sdFilter === k ? 'bg-clinic-600 text-white border-clinic-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${label}</button>`;
+      document.getElementById('sd-filters').innerHTML = chip('all', 'All ' + savedReports.length) + chip('usg', 'USG & Clinical ' + nUsg) + chip('pathology', 'Pathology ' + nPath);
+      document.getElementById('sd-status').innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i>Stored on this device (main store + automatic copy). Use <b>Backup</b> to keep a file safe; <b>Restore</b> recovers everything from it in one click.';
+      const rows = savedReports.filter(r => {
+        if (sdFilter === 'usg' && r.category === 'pathology') return false;
+        if (sdFilter === 'pathology' && r.category !== 'pathology') return false;
+        if (!q) return true;
+        const t = (TEMPLATES[r.templateKey] && TEMPLATES[r.templateKey].title) || r.templateKey;
+        return (r.patientName + ' ' + t + ' ' + r.date).toLowerCase().includes(q);
+      });
+      if (!rows.length) {
+        list.innerHTML = `<div class="text-center text-slate-400 py-16 bg-white rounded-xl border border-dashed border-slate-300"><i class="fa-regular fa-folder-open text-4xl mb-3 block"></i>${savedReports.length ? 'No documents match your search.' : 'No saved documents yet. Fill a report and press Save.'}</div>`;
+        return;
+      }
+      list.innerHTML = rows.map(item => {
+        const t = (TEMPLATES[item.templateKey] && TEMPLATES[item.templateKey].title) || item.templateKey;
+        const when = new Date(item.savedAt || item.id).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const badge = item.category === 'pathology' ? 'bg-violet-100 text-violet-700' : 'bg-cyan-100 text-cyan-800';
+        return `<div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-slate-800 truncate">${abdEsc(item.patientName)} ${currentSavedId === item.id ? '<span class="ml-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded px-1.5 py-0.5 align-middle">OPEN NOW</span>' : ''}</p>
+            <p class="text-xs text-slate-500 mt-0.5"><span class="inline-block ${badge} rounded px-1.5 py-0.5 font-semibold mr-1">${item.category === 'pathology' ? 'Pathology' : 'USG / Clinical'}</span>${abdEsc(t)}</p>
+            <p class="text-xs text-slate-400 mt-0.5">Report date: ${abdEsc(item.date)} &middot; Saved: ${abdEsc(when)}</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="loadSavedReport(${item.id})" class="bg-clinic-600 hover:bg-clinic-700 text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-folder-open"></i> Open</button>
+            <button onclick="deleteSavedReport(${item.id})" title="Delete" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-sm px-3 py-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function loadSavedReport(id) {
       const item = savedReports.find(r => r.id === id);
-      if (item) {
-        if (item.category && item.category !== currentCategory) {
-          switchCategory(item.category);
-        }
-        currentTemplateKey = item.templateKey;
-        formData = JSON.parse(JSON.stringify(item.data));
-        if (item.signers) { signers = item.signers.slice(); renderSignerPanel(); renderSignatures(); }
-        document.getElementById('template-select').value = currentTemplateKey;
-        document.getElementById('preview-report-title').innerText = formData.title;
-        renderFormFields();
-        renderLivePreview();
-        closeSavedModal();
-      }
+      if (!item) return;
+      if (item.category && item.category !== currentCategory) switchCategory(item.category);
+      currentTemplateKey = item.templateKey;
+      formData = JSON.parse(JSON.stringify(item.data));
+      if (item.signers) { signers = item.signers.slice(); renderSignerPanel(); renderSignatures(); }
+      document.getElementById('template-select').value = currentTemplateKey;
+      document.getElementById('preview-report-title').innerText = formData.title;
+      renderFormFields();
+      renderLivePreview();
+      currentSavedId = item.id;
+      closeSavedModal();
+      toast('Opened: ' + item.patientName);
     }
 
-    function deleteSavedReport(id) {
+    async function deleteSavedReport(id) {
+      const item = savedReports.find(r => r.id === id);
+      if (!item || !confirm('Delete the saved document for "' + item.patientName + '"? This cannot be undone (unless you have a backup).')) return;
       savedReports = savedReports.filter(r => r.id !== id);
-      localStorage.setItem('ansari_saved_reports', JSON.stringify(savedReports));
-      updateSavedCount();
-      showSavedModal();
+      if (currentSavedId === id) currentSavedId = null;
+      lsWriteReports(); await idbDelete(id);
+      updateSavedCount(); renderSavedPage();
+      toast('Document deleted');
+    }
+
+    function exportBackup() {
+      if (!savedReports.length) { toast('Nothing to back up yet'); return; }
+      const blob = new Blob([JSON.stringify({ app: 'medico', version: 1, exportedAt: new Date().toISOString(), reports: savedReports }, null, 1)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'medico-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast('Backup downloaded (' + savedReports.length + ' documents)');
+    }
+    function restoreBackup(input) {
+      const file = input.files && input.files[0]; input.value = '';
+      if (!file) return;
+      const rd = new FileReader();
+      rd.onload = async () => {
+        try {
+          const j = JSON.parse(rd.result);
+          const incoming = Array.isArray(j) ? j : j.reports;
+          if (!Array.isArray(incoming)) throw new Error('bad file');
+          const before = savedReports.length;
+          savedReports = mergeReports(savedReports, incoming);
+          lsWriteReports(); await idbPut(savedReports);
+          updateSavedCount(); renderSavedPage();
+          toast('Restored. ' + (savedReports.length - before) + ' new document(s) added, ' + savedReports.length + ' in total');
+        } catch (e) { toast('That file is not a valid Medico backup'); }
+      };
+      rd.readAsText(file);
     }
 
     // ===== Medico additions =====
