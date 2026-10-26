@@ -112,6 +112,12 @@
     #pin-gate .pg-shake{animation:pgshake .35s}
     @keyframes pgshake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
   </style>
+  <!-- Basic header-button look, so the buttons are still usable if plus.js fails to load (plus.js restyles them when it does) -->
+  <style>
+    .mh-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:54px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.1);color:#fff;font-size:10.5px;font-weight:600;line-height:1.1}
+    .mh-green{background:#059669}
+    @media(min-width:768px){.mh-btn{flex-direction:row;gap:7px;font-size:13px;padding:8px 14px}}
+  </style>
   <script src="pins.js"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
@@ -206,6 +212,7 @@
         <button onclick="saveCurrentReport()" class="mh-btn" title="Save this document"><i class="fa-solid fa-bookmark"></i><span>Save</span></button>
         <button onclick="showSavedModal()" class="mh-btn" title="Saved documents"><i class="fa-solid fa-folder-open"></i><span>Saved <b id="saved-count">0</b></span></button>
         <button id="pdf-btn" onclick="downloadPDF()" class="mh-btn mh-green" title="Download as PDF"><i class="fa-solid fa-download"></i><span>PDF</span></button>
+        <button onclick="window.print()" class="mh-btn" title="Print this document"><i class="fa-solid fa-print"></i><span>Print</span></button>
         <span id="tools-slot"></span>
       </div>
     </div>
@@ -1707,5 +1714,18 @@ function setPatientGender(v) {
     }
   </script>
   <script src="plus.js"></script>
+  <script>
+    // If plus.js did not load or crashed, the "More" button is missing: say so instead of failing silently.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (document.getElementById('tools-btn')) return;
+        var h = document.querySelector('header'); if (!h) return;
+        var b = document.createElement('div'); b.className = 'no-print'; b.id = 'plus-missing';
+        b.style.cssText = 'background:#fef3c7;color:#92400e;font:600 12.5px Inter,Arial,sans-serif;padding:8px 12px;text-align:center;border-bottom:1px solid #fcd34d';
+        b.textContent = 'Extra tools (Patients, Bill / Receipt, Today, My wording) did not load. Make sure plus.js is uploaded next to index.html, then press Ctrl+Shift+R.';
+        h.parentNode.insertBefore(b, h.nextSibling);
+      }, 1000);
+    });
+  </script>
 </body>
 </html>
