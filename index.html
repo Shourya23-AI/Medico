@@ -155,10 +155,12 @@
       list.push({ pin: pin, from: from, to: addMonths(from, months), id: pin + '|' + from });
     });
     function activePins() { return list.filter(function (p) { return today >= p.from && today <= p.to; }); }
-    function unlock(id) { ls('s', KEY, id); ls('r', FKEY); document.documentElement.classList.remove('pin-locked'); }
+    var TKEY = 'medico_unlock_ts_v1', HOURS = 3;
+    function unlock(id) { ls('s', KEY, id); ls('s', TKEY, String(Date.now())); ls('r', FKEY); document.documentElement.classList.remove('pin-locked'); }
     var active = activePins(), saved = ls('g', KEY);
-    if (saved && active.some(function (p) { return p.id === saved; })) { unlock(saved); return; }
-    ls('r', KEY);
+    var ts = +ls('g', TKEY) || 0, age = Date.now() - ts;
+    if (saved && ts && age >= 0 && age < HOURS * 3600000 && active.some(function (p) { return p.id === saved; })) { document.documentElement.classList.remove('pin-locked'); return; }
+    ls('r', KEY); ls('r', TKEY);
     if (!list.length) { fail('No valid PIN lines found in pins.js. Each line must be a 25-digit number.'); return; }
     if (!active.length) {
       var nextFrom = list.map(function (p) { return p.from; }).filter(function (d) { return d > today; }).sort()[0];
@@ -201,10 +203,10 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button onclick="saveCurrentReport()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Save this document"><i class="fa-solid fa-bookmark"></i><span class="hidden md:inline">Save</span></button>
-        <button onclick="showSavedModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Saved Documents"><i class="fa-solid fa-folder-open"></i><span class="hidden md:inline">Saved</span> (<span id="saved-count">0</span>)</button>
-        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow" title="Print"><i class="fa-solid fa-print"></i><span class="hidden md:inline">Print</span></button>
-                <button id="pdf-btn" onclick="downloadPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-lg flex items-center gap-2"><i class="fa-solid fa-download"></i> Download PDF</button>
+        <button onclick="saveCurrentReport()" class="mh-btn" title="Save this document"><i class="fa-solid fa-bookmark"></i><span>Save</span></button>
+        <button onclick="showSavedModal()" class="mh-btn" title="Saved documents"><i class="fa-solid fa-folder-open"></i><span>Saved <b id="saved-count">0</b></span></button>
+        <button id="pdf-btn" onclick="downloadPDF()" class="mh-btn mh-green" title="Download as PDF"><i class="fa-solid fa-download"></i><span>PDF</span></button>
+        <span id="tools-slot"></span>
       </div>
     </div>
   </header>
@@ -319,8 +321,6 @@
       <div class="max-w-5xl mx-auto px-3 sm:px-4 py-3 flex flex-wrap items-center gap-2">
         <button onclick="closeSavedModal()" class="bg-white/10 hover:bg-white/20 text-sm px-3 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Back</button>
         <h2 class="text-lg font-bold flex-1 min-w-[10rem]"><i class="fa-solid fa-folder-open text-cyan-200 mr-2"></i>Saved Documents <span id="sd-total" class="text-cyan-200 text-sm font-semibold"></span></h2>
-        <button onclick="exportBackup()" class="bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5" title="Download all saved documents as one file"><i class="fa-solid fa-download"></i> Backup</button>
-        <button onclick="document.getElementById('restore-file').click()" class="bg-cyan-600 hover:bg-cyan-500 text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5" title="Recover everything from a backup file"><i class="fa-solid fa-rotate-left"></i> Restore</button>
         <input id="restore-file" type="file" accept=".json,application/json" class="hidden" onchange="restoreBackup(this)">
       </div>
     </div>
@@ -334,6 +334,14 @@
       </div>
       <p id="sd-status" class="text-xs text-slate-500 mb-3"></p>
       <div id="saved-reports-list" class="space-y-2"></div>
+      <div id="backup-card" class="mt-8 bg-white rounded-2xl border border-slate-200 p-4">
+        <h3 class="text-sm font-bold text-slate-700 mb-1"><i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i> Backup &amp; Restore</h3>
+        <p class="text-xs text-slate-500 mb-3">Keep a copy of all your saved documents as a file. Restoring only adds documents from the file; nothing already saved is deleted.</p>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="exportBackup()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Download backup</button>
+          <button onclick="if(confirm('Restore from a backup file?\n\nDocuments in the file are added to the ones already saved. Nothing is deleted.'))document.getElementById('restore-file').click()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Restore from file&hellip;</button>
+        </div>
+      </div>
     </div>
   </div>
   <div id="toast" class="no-print fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg"></div>
@@ -495,7 +503,7 @@ function setPatientGender(v) {
       const notice = f.notice == null ? RX_NOTICE : f.notice;
       return `
       <div style="font-family:Inter,Arial,sans-serif;color:#111;margin-top:-4px">
-        <div style="font-size:20px;font-weight:600;line-height:1.15">Dr. Israphil&nbsp; Ansari</div>
+        <div style="font-size:20px;font-weight:600;line-height:1.15">${window.rxDocName ? rxDocName(f) : 'Dr. Israphil&nbsp; Ansari'}</div>
         <div style="font-size:13px;line-height:1.35">BAMS (TU) NAMC No.658</div>
         <div style="font-size:13px;line-height:1.35">General Physician</div>
         <div style="border-top:1.5px solid #222;border-bottom:1.5px solid #222;margin-top:3px;padding:4px 0;font-size:13.5px">
@@ -1698,5 +1706,6 @@ function setPatientGender(v) {
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
     }
   </script>
+  <script src="plus.js"></script>
 </body>
 </html>
