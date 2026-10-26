@@ -91,6 +91,7 @@
     #print-area.compact [class*="space-y-"] > * + * { margin-top: .35rem !important; }
     #print-area.compact td, #print-area.compact th { padding-top: 2px !important; padding-bottom: 2px !important; }
     #print-area.compact #preview-body { line-height: 1.35; }
+    #form-fields-container ::placeholder { color: #cbd5e1; font-style: italic; opacity: 1; }
     #preview-body tr, #preview-body p, #preview-body li, #preview-body pre { break-inside: avoid; }
   </style>
   <!-- PIN LOCK: hides the whole app until a valid PIN is entered -->
@@ -741,6 +742,14 @@ function setPatientGender(v) {
       currentSavedId = null;
       currentTemplateKey = templateKey;
       formData = JSON.parse(JSON.stringify(TEMPLATES[templateKey]));
+      // Sample text is not pre-filled: boxes start empty and the sample shows only as a faint placeholder.
+      Object.keys(formData.patient).forEach(k => { if (typeof formData.patient[k] === 'string') formData.patient[k] = ''; });
+      Object.keys(formData.fields).forEach(k => {
+        if (/(Ref|Unit)$/.test(k)) return;                                   // standard reference ranges / units stay
+        if (templateKey === 'clinical_rx' && (k === 'tests' || k === 'notice')) return;   // printed lines on the Rx pad
+        const v = formData.fields[k];
+        formData.fields[k] = typeof v === 'string' ? '' : Array.isArray(v) ? [] : typeof v === 'boolean' ? false : v;
+      });
       formData.patient.date = getTodayNepaliDate('/') || formData.patient.date;
       document.getElementById('preview-report-title').innerText = formData.title;
       renderFormFields();
@@ -1055,7 +1064,7 @@ function setPatientGender(v) {
       document.getElementById('prev-label-date').innerText = isPath ? 'Date / Lab No.' : 'Date';
       if (isPath) {
         document.getElementById('prev-patient-address').innerText = `${formData.patient.specimen || 'Serum / Blood'}`;
-        document.getElementById('prev-patient-date').innerText = `${formData.patient.date || '-'} | ${formData.patient.labNo || 'LAB-8300'}`;
+        document.getElementById('prev-patient-date').innerText = `${formData.patient.date || '-'} | ${formData.patient.labNo || ''}`;
       } else {
         document.getElementById('prev-patient-address').innerText = formData.patient.address || '-';
         document.getElementById('prev-patient-date').innerText = formData.patient.date || '-';
@@ -1606,6 +1615,19 @@ function setPatientGender(v) {
       applyLetterpad(rx ? 'usg' : currentCategory);   // the Rx pad always uses the Ansari Medico Clinic letterhead
     }
     renderLivePreview = function () { _renderLivePreview(); applyRxMode(); fitPaper(); };
+
+    // Show each template's old sample text as a faint placeholder in its (now empty) box.
+    function applyPlaceholders() {
+      const sm = TEMPLATES[currentTemplateKey]; if (!sm) return;
+      document.querySelectorAll('#form-fields-container input[type=text], #form-fields-container textarea').forEach(el => {
+        if (el.getAttribute('placeholder')) return;
+        const m = /updateData\('(\w+)',\s*'(\w+)'/.exec(el.getAttribute('oninput') || ''); if (!m) return;
+        const v = (sm[m[1]] || {})[m[2]];
+        if (typeof v === 'string' && v && m[2] !== 'date') el.setAttribute('placeholder', v);
+      });
+    }
+    const _renderFormFields = renderFormFields;
+    renderFormFields = function () { _renderFormFields(); applyPlaceholders(); };
 
     // PDF that downloads straight to the phone
     async function downloadPDF() {
