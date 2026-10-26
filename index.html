@@ -609,13 +609,14 @@ function setPatientGender(v) {
       },
       clinical_rx: {
         title: "CLINICAL PRESCRIPTION & OPD EXAMINATION",
-        patient: { name: "", age: "", sex: "", address: "", date: "", refBy: "" },
+        // Sample values below are shown only as faint placeholders; the boxes themselves start empty.
+        patient: { name: "Ram Bahadur Gurung", age: "48", sex: "Male", address: "Khairahani", date: "", refBy: "" },
         fields: {
-          cc: "", oe: "",
-          bp: "", temp: "", respRate: "", lungs: "", pulse: "", spo2: "", heartRate: "", abdomen: "",
+          cc: "Fever x 3 days, dry cough, weakness", oe: "Mild pharyngeal congestion (+)",
+          bp: "120/80", temp: "99.4", respRate: "18", lungs: "B/L clear, no rales/rhonchi", pulse: "78", spo2: "98%", heartRate: "78", abdomen: "Soft, non-tender",
           dm: false, htn: false, thyroid: false,
-          ph: "", dh: "", mh: "",
-          rxList: "",
+          ph: "No history of past surgeries", dh: "On Metformin 500 mg BD", mh: "Tab. Paracetamol PRN",
+          rxList: "1. Tab. Paracetamol 500mg - 1-1-1 (3 days)\n2. Cap. Amoxicillin 500mg - 1-1-1 (5 days)\n3. Cough Syrup - 2 tsf TDS",
           tests: RX_TESTS,
           notice: RX_NOTICE
         }
@@ -698,6 +699,47 @@ function setPatientGender(v) {
       }
     };
 
+    // ---- Prewritten text vs. patient-specific boxes ----
+    // Descriptive/finding boxes start PREWRITTEN (edit freely). Names, ages, measurements and results start EMPTY,
+    // and their old sample value is kept in `ph` to show as a faint placeholder only.
+    (function () {
+      const BLANK = {
+        usg_gravid: ['fhr', 'crl', 'gaWeeks', 'gaDays', 'edd'],
+        usg_fetal: ['bpdCms','bpdWks','bpdDays','hcCms','hcWks','hcDays','acCms','acWks','acDays','flCms','flWks','flDays','fetalWeight','fwTol','fhr','placenta','afi','gaUltrasoundWeeks','gaUltrasoundDays','edd'],
+        usg_abdomen: ['gender', 'sel'],
+        clinical_rx: ['cc','oe','bp','temp','respRate','pulse','spo2','heartRate','ph','dh','mh','rxList'],
+        cert_medical: ['relativeName','relationType','caregiverName','diagnosis','admissionPeriod'],
+        cert_fitness: ['parentName'],
+        cert_experience: ['designation','startDate','endDate'],
+        path_tft: ['t3Val','t4Val','tshVal'],
+        path_hba1c: ['hba1cVal','eagVal'],
+        path_general: ['crpVal','vitB12Val','rbsVal','widalVal','mpVal','uricAcidVal','hbsagVal','hivVal']
+      };
+      const DEFAULT = {
+        usg_gravid: { impression: 'Single live intrauterine gestational sac.' },
+        usg_fetal: { impression: 'SINGLE LIVE INTRAUTERINE FETUS IN LONGITUDINAL LIE, CEPHALIC PRESENTATION. INTERNAL OS CLOSED.' },
+        usg_abdomen: { impression: 'No significant abnormality detected on this ultrasound study.', otherComment: '' },
+        usg_breast: {
+          rtBreast: 'Right breast is normal in size, shape and echotexture. No focal mass or cystic lesion seen.',
+          ltBreast: 'Left breast is normal in size, shape and echotexture. No focal mass or cystic lesion seen.',
+          impression: 'Normal bilateral breast ultrasound study.'
+        },
+        usg_thyroid: {
+          thyroidObs: 'Both lobes of the thyroid gland and isthmus are normal in size, shape and echotexture. No focal nodule or cystic lesion seen.',
+          impression: 'Normal thyroid ultrasound study.',
+          advice: 'ADV: CORRELATION WITH CLINICAL FINDINGS.'
+        },
+        cert_medical: { narrative: "The patient's condition requires a caregiver to remain with them during treatment and care. Please kindly grant permission to stay with the patient for the duration of the treatment." },
+        cert_fitness: { statement: 'I have carefully examined the applicant and certify that the applicant is fit both physically and mentally to perform the duties.' },
+        cert_experience: { appraisal: 'Throughout the period of employment, the employee demonstrated professionalism, honesty, punctuality, and dedication. We wish success in all future endeavors.' }
+      };
+      Object.keys(TEMPLATES).forEach(k => {
+        const t = TEMPLATES[k]; t.ph = {};
+        (BLANK[k] || []).forEach(f => { t.ph[f] = t.fields[f]; t.fields[f] = Array.isArray(t.fields[f]) ? [] : ''; });
+        Object.assign(t.fields, DEFAULT[k] || {});
+      });
+    })();
+
     // Initialize App
     window.onload = () => {
       initStorage();
@@ -738,14 +780,10 @@ function setPatientGender(v) {
       currentSavedId = null;
       currentTemplateKey = templateKey;
       formData = JSON.parse(JSON.stringify(TEMPLATES[templateKey]));
-      // Sample text is not pre-filled: boxes start empty and the sample shows only as a faint placeholder.
-      Object.keys(formData.patient).forEach(k => { if (typeof formData.patient[k] === 'string') formData.patient[k] = ''; });
-      Object.keys(formData.fields).forEach(k => {
-        if (/(Ref|Unit)$/.test(k)) return;                                   // standard reference ranges / units stay
-        if (templateKey === 'clinical_rx' && (k === 'tests' || k === 'notice')) return;   // printed lines on the Rx pad
-        const v = formData.fields[k];
-        formData.fields[k] = typeof v === 'string' ? '' : Array.isArray(v) ? [] : typeof v === 'boolean' ? false : v;
-      });
+      // Patient boxes start empty (sample shows as placeholder); the finding/text boxes below stay prewritten.
+      Object.keys(formData.patient).forEach(k => { if (typeof formData.patient[k] === 'string' && k !== 'specimen') formData.patient[k] = ''; });
+      delete formData.ph;
+      if (templateKey === 'usg_abdomen') ABD_ORGANS.forEach(o => { formData.fields[o.k] = o.def; });
       formData.patient.date = getTodayNepaliDate('/') || formData.patient.date;
       document.getElementById('preview-report-title').innerText = formData.title;
       renderFormFields();
@@ -763,7 +801,6 @@ function setPatientGender(v) {
         else if (Array.isArray(formData.fields[k])) formData.fields[k] = [];
         else formData.fields[k] = "";
       }
-      if (currentTemplateKey === 'clinical_rx') { formData.fields.tests = RX_TESTS; formData.fields.notice = RX_NOTICE; }
       renderFormFields();
       renderLivePreview();
     }
@@ -916,7 +953,7 @@ function setPatientGender(v) {
       const sx = (formData.patient.sex || '').trim().toLowerCase();
       return sx[0] === 'm' ? 'Male' : sx[0] === 'f' ? 'Female' : '';
     }
-    function abdOrgans(f) { const g = abdGender(f); return ABD_ORGANS.filter(o => !o.only || o.only === g); }
+    function abdOrgans(f) { const g = abdGender(f); return ABD_ORGANS.filter(o => !o.only || o.only === g); }  // no gender yet = common organs only
     function setAbdGender(g) {
       const f = formData.fields;
       f.gender = g; formData.patient.sex = g;
@@ -1620,7 +1657,7 @@ function setPatientGender(v) {
       document.querySelectorAll('#form-fields-container input[type=text], #form-fields-container textarea').forEach(el => {
         if (el.getAttribute('placeholder')) return;
         const m = /updateData\('(\w+)',\s*'(\w+)'/.exec(el.getAttribute('oninput') || ''); if (!m) return;
-        const v = (sm[m[1]] || {})[m[2]];
+        const v = m[1] === 'patient' ? (sm.patient || {})[m[2]] : (sm.ph || {})[m[2]];
         if (typeof v === 'string' && v && m[2] !== 'date') el.setAttribute('placeholder', v);
       });
     }
