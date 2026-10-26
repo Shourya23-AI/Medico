@@ -249,7 +249,7 @@
         </div>
 
         <!-- Sign-off -->
-        <div class="mt-6 pt-4 border-t border-slate-200">
+        <div id="signoff-box" class="mt-6 pt-4 border-t border-slate-200">
           <label class="block text-xs font-semibold text-slate-600 mb-2">Sign-off: tick everyone who signs this report</label>
           <div id="signer-list" class="max-h-52 overflow-y-auto pr-1"></div>
           <details class="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
@@ -471,9 +471,60 @@ function setPatientGender(v) {
       pathology: [
         { key: 'path_tft', label: 'Thyroid Function Test (TFT Panel)' },
         { key: 'path_hba1c', label: 'Biochemistry & Diabetes (HbA1c / eAG)' },
-        { key: 'path_general', label: 'General Pathology & Serology Panel (CRP, Vit-B12, etc.)' }
+        { key: 'path_general', label: 'General Pathology & Serology Panel (CRP, Vit-B12, etc.)' },
+        { key: 'clinical_rx', label: 'Clinical Prescription / OPD Note (Rx)' }
       ]
     };
+
+    // ===== Prescription (Rx) pad =====
+    const RX_TESTS = "CBC, WIDAL, MP, RBS, URE, URIC ACID, RA F, RFT, LFT, LPT, TFT, HBsag, HIV, ASO T, VDRL, HBa1c, CRP, VITA-D, USG, X-RAY";
+    const RX_NOTICE = "बिहिवार OPD बन्द रहने छ। बिरामी चेक गर्ने समय बिहान 8 बजे देखि 1.0 र 2 बजे देखी 5 बजे सम्म।";
+    const RX_QUOTE = "मानव सेवा नै इस्वर सेवा हो! मानव शरीरको स्वस्थ्य नै धन हो । स्वस्थ्य रहनु खुसी रहनु!";
+    function rxPreviewHtml(f, p) {
+      const e = v => abdEsc(v).replace(/\n/g, '<br>');
+      const tick = on => `<span style="display:inline-block;min-width:16px;text-align:center;font-weight:800">${on ? '&#10003;' : '&nbsp;'}</span>`;
+      const val = v => `<span style="font-weight:600">${e(v)}</span>`;
+      const row = (label, v, unit) => `<div style="display:flex;align-items:baseline;gap:8px;margin-top:11px;font-size:13px"><span style="width:96px;flex:none">${label}</span><span style="min-width:48px">${val(v)}</span><span>${unit || ''}</span></div>`;
+      const line = (label, v) => `<div style="margin-top:12px;font-size:13px;font-weight:700">${label} <span style="font-weight:600">${e(v)}</span></div>`;
+      const tests = f.tests == null ? RX_TESTS : f.tests;
+      const notice = f.notice == null ? RX_NOTICE : f.notice;
+      return `
+      <div style="font-family:Inter,Arial,sans-serif;color:#111;margin-top:-4px">
+        <div style="font-size:20px;font-weight:600;line-height:1.15">Dr. Israphil&nbsp; Ansari</div>
+        <div style="font-size:13px;line-height:1.35">BAMS (TU) NAMC No.658</div>
+        <div style="font-size:13px;line-height:1.35">General Physician</div>
+        <div style="border-top:1.5px solid #222;border-bottom:1.5px solid #222;margin-top:3px;padding:4px 0;font-size:13.5px">
+          <div style="display:flex;gap:10px;align-items:baseline"><span style="flex:1">Patient Name: ${val(p.name)}</span><span style="width:130px">Age: ${val(p.age)}</span><span style="width:96px">Sex: ${val(p.sex)}</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline;margin-top:3px"><span style="flex:1">Address: ${val(p.address)}</span><span style="width:226px">Date: ${val(p.date)}</span></div>
+        </div>
+        <div style="display:flex;min-height:168mm">
+          <div style="width:43%;flex:none;border-right:1.5px solid #222;padding:4px 8px 6px 0">
+            <div style="font-size:19px;font-weight:700">C/C</div>
+            <div style="font-size:13px;min-height:34mm;margin-top:4px;font-weight:600">${e(f.cc)}</div>
+            <div style="font-size:19px;font-weight:600;margin-top:6px">O/E</div>
+            ${row('BP', f.bp, 'mmHg')}
+            ${row('Temp:', f.temp, '&deg;F')}
+            ${row('Resp Rate:', f.respRate, '/Min')}
+            ${row('Lungs:', f.lungs, '')}
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:11px;font-size:13px"><span style="width:96px;flex:none">Pulse:</span><span style="min-width:30px">${val(f.pulse)}</span><span>b/min</span><span style="margin-left:6px">SpO2</span><span>${val(f.spo2)}</span></div>
+            ${row('Heart rate:', f.heartRate, '/Min')}
+            ${row('Abdomen:', f.abdomen, '')}
+            ${String(f.oe || '').trim() ? `<div style="margin-top:11px;font-size:13px">${val(f.oe)}</div>` : ''}
+            <div style="margin-top:14px;font-size:13px;display:flex;align-items:baseline;gap:2px;flex-wrap:wrap"><span style="font-size:19px;font-weight:600">H/O</span>:DM(${tick(f.dm)})&nbsp;HTN(${tick(f.htn)})&nbsp;Thyroids(${tick(f.thyroid)})</div>
+            ${line('P/H', f.ph)}
+            ${line('D/H:', f.dh)}
+            ${line('M/H:', f.mh)}
+          </div>
+          <div style="flex:1;padding:6px 0 6px 14px">
+            <div style="font-size:9.5px;line-height:1.4;font-family:'Noto Sans Devanagari',Inter,sans-serif">${RX_QUOTE}</div>
+            <div style="font-size:21px;font-weight:700;margin-top:18px">Rx</div>
+            <div style="font-size:13.5px;margin-top:6px;white-space:pre-wrap;line-height:1.6;font-weight:600">${abdEsc(f.rxList)}</div>
+          </div>
+        </div>
+        <div style="border-top:1.5px solid #4a6fd8;padding-top:5px;font-size:13px;line-height:1.5;font-weight:500">${e(tests)}</div>
+        <div style="margin-top:9px;color:#d63a3a;font-size:14px;font-weight:600;line-height:1.5;font-family:'Noto Sans Devanagari',Inter,sans-serif">${e(notice)}</div>
+      </div>`;
+    }
 
     // Default Datasets for Templates
     const TEMPLATES = {
@@ -553,17 +604,15 @@ function setPatientGender(v) {
       },
       clinical_rx: {
         title: "CLINICAL PRESCRIPTION & OPD EXAMINATION",
-        patient: { name: "Ram Bahadur Gurung", age: "48", sex: "Male", address: "Khairahani", date: "2083/06/28", refBy: "OPD" },
+        patient: { name: "", age: "", sex: "", address: "", date: "", refBy: "" },
         fields: {
-          cc: "Fever x 3 days, dry cough, weakness",
-          bp: "120/80", temp: "99.4", respRate: "18", pulse: "78", spo2: "98", heartRate: "78",
-          lungs: "B/L Clear, no rales/rhonchi", abdomen: "Soft, non-tender",
-          dm: true, htn: false, thyroid: false,
-          oe: "Mild pharyngeal congestion (+)",
-          ph: "No history of past surgeries",
-          dh: "On Metformin 500mg BD",
-          rxList: "1. Tab. Paracetamol 500mg - 1-1-1 (3 days)\n2. Cap. Amoxicillin 500mg - 1-1-1 (5 days)\n3. Cough Syrup - 2 tsf TDS",
-          labTests: ["CBC", "RBS", "USG"]
+          cc: "", oe: "",
+          bp: "", temp: "", respRate: "", lungs: "", pulse: "", spo2: "", heartRate: "", abdomen: "",
+          dm: false, htn: false, thyroid: false,
+          ph: "", dh: "", mh: "",
+          rxList: "",
+          tests: RX_TESTS,
+          notice: RX_NOTICE
         }
       },
       cert_medical: {
@@ -709,6 +758,7 @@ function setPatientGender(v) {
         else if (Array.isArray(formData.fields[k])) formData.fields[k] = [];
         else formData.fields[k] = "";
       }
+      if (currentTemplateKey === 'clinical_rx') { formData.fields.tests = RX_TESTS; formData.fields.notice = RX_NOTICE; }
       renderFormFields();
       renderLivePreview();
     }
@@ -724,7 +774,7 @@ function setPatientGender(v) {
       pHeader.innerText = "1. Patient Info & Specimen Details";
       container.appendChild(pHeader);
 
-      const isPath = currentCategory === 'pathology';
+      const isPath = currentCategory === 'pathology' && currentTemplateKey !== 'clinical_rx';
 
       const pGrid = document.createElement('div');
       pGrid.className = "grid grid-cols-2 gap-2 text-xs";
@@ -945,9 +995,26 @@ function setPatientGender(v) {
           <div><label class="block font-semibold">IMPRESSION</label><textarea rows="2" oninput="updateData('fields', 'impression', this.value)" class="w-full border border-clinic-600 rounded p-1 font-semibold">${f.impression}</textarea></div>
         `;
       } else if (currentTemplateKey === 'clinical_rx') {
+        const T = (label, key, rows, extra) => `<div><label class="block font-medium text-slate-700">${label}</label><textarea rows="${rows}" oninput="updateData('fields', '${key}', this.value)" class="w-full border rounded p-1.5 ${extra || ''}">${abdEsc(f[key])}</textarea></div>`;
+        const I = (label, key, ph) => `<div><label class="block font-medium text-slate-700">${label}</label><input type="text" placeholder="${ph || ''}" value="${abdEsc(f[key])}" oninput="updateData('fields', '${key}', this.value)" class="w-full border rounded p-1.5"></div>`;
+        const C = (label, key) => `<label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" ${f[key] ? 'checked' : ''} onchange="updateData('fields', '${key}', this.checked)"><span>${label}</span></label>`;
         fContainer.innerHTML = `
-          <div><label class="block font-medium text-slate-700">Chief Complaints (C/C)</label><input type="text" value="${f.cc}" oninput="updateData('fields', 'cc', this.value)" class="w-full border rounded p-1"></div>
-          <div><label class="block font-medium text-slate-700">Prescription (Rx Notes)</label><textarea rows="4" oninput="updateData('fields', 'rxList', this.value)" class="w-full border border-emerald-600 rounded p-1.5 font-mono text-xs">${f.rxList}</textarea></div>
+          <div class="text-[11px] text-slate-400">Headings, units and doctor details are fixed. Everything you type below is editable.</div>
+          ${T('C/C (Chief Complaints)', 'cc', 4)}
+          <div class="text-xs font-bold text-clinic-800 uppercase border-b border-slate-200 pb-1">O/E (On Examination)</div>
+          <div class="grid grid-cols-2 gap-2">
+            ${I('BP (mmHg)', 'bp', '120/80')}${I('Temp (&deg;F)', 'temp', '98.6')}
+            ${I('Resp Rate (/Min)', 'respRate')}${I('Pulse (b/min)', 'pulse')}
+            ${I('SpO2', 'spo2')}${I('Heart rate (/Min)', 'heartRate')}
+          </div>
+          ${I('Lungs', 'lungs', 'B/L clear')}
+          ${I('Abdomen', 'abdomen', 'Soft, non-tender')}
+          ${T('Other O/E remarks (optional)', 'oe', 2)}
+          <div><label class="block font-medium text-slate-700 mb-1">H/O</label><div class="flex gap-4">${C('DM', 'dm')}${C('HTN', 'htn')}${C('Thyroids', 'thyroid')}</div></div>
+          ${I('P/H', 'ph')}${I('D/H', 'dh')}${I('M/H', 'mh')}
+          ${T('Rx (Prescription)', 'rxList', 9, 'border-emerald-600 font-mono text-xs')}
+          ${T('Investigations line (printed under the Rx)', 'tests', 2, 'text-xs')}
+          ${T('Red notice at the bottom (OPD timing)', 'notice', 2, 'text-xs')}
         `;
       } else if (currentTemplateKey === 'cert_medical') {
         fContainer.innerHTML = `
@@ -983,7 +1050,7 @@ function setPatientGender(v) {
       document.getElementById('prev-patient-ref').innerText = formData.patient.refBy ? 'Ref. By: ' + formData.patient.refBy : '';
       document.getElementById('prev-patient-age-sex').innerText = `${formData.patient.age || '-'} Yrs / ${formData.patient.sex || '-'}`;
       
-      const isPath = currentCategory === 'pathology';
+      const isPath = currentCategory === 'pathology' && currentTemplateKey !== 'clinical_rx';
       document.getElementById('prev-label-address').innerText = isPath ? 'Address / Specimen' : 'Address';
       document.getElementById('prev-label-date').innerText = isPath ? 'Date / Lab No.' : 'Date';
       if (isPath) {
@@ -1220,15 +1287,7 @@ function setPatientGender(v) {
           </div>
         `;
       } else if (currentTemplateKey === 'clinical_rx') {
-        body.innerHTML = `
-          <div class="space-y-4">
-            <p><strong>C/C:</strong> ${f.cc}</p>
-            <div class="my-4 border-l-4 border-emerald-600 pl-3 py-1">
-              <p class="font-bold text-emerald-800 text-base font-sans">Rx (Treatment Notes):</p>
-              <pre class="font-serif text-sm whitespace-pre-wrap mt-2">${f.rxList}</pre>
-            </div>
-          </div>
-        `;
+        body.innerHTML = rxPreviewHtml(f, formData.patient);
       } else if (currentTemplateKey === 'cert_medical') {
         body.innerHTML = `
           <div class="space-y-4 leading-relaxed font-serif text-slate-800">
@@ -1539,7 +1598,14 @@ function setPatientGender(v) {
       wrap.style.height = (box.offsetHeight * s) + 'px';
     }
     const _renderLivePreview = renderLivePreview;
-    renderLivePreview = function () { _renderLivePreview(); fitPaper(); };
+    function applyRxMode() {
+      const rx = currentTemplateKey === 'clinical_rx';
+      ['patient-info-bar', 'report-title-container', 'signoff-box'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = rx ? 'none' : ''; });
+      const sb = document.getElementById('signature-block-container');
+      if (sb && sb.parentElement) sb.parentElement.style.display = rx ? 'none' : '';
+      applyLetterpad(rx ? 'usg' : currentCategory);   // the Rx pad always uses the Ansari Medico Clinic letterhead
+    }
+    renderLivePreview = function () { _renderLivePreview(); applyRxMode(); fitPaper(); };
 
     // PDF that downloads straight to the phone
     async function downloadPDF() {
