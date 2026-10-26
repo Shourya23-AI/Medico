@@ -225,6 +225,9 @@
           <button id="tab-pathology" onclick="switchCategory('pathology')" class="flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700">
             <i class="fa-solid fa-microscope mr-1"></i> Pathology Lab
           </button>
+          <button id="tab-rx" onclick="switchCategory('rx')" class="flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700">
+            <i class="fa-solid fa-prescription mr-1"></i> Prescription
+          </button>
         </div>
 
         <label for="template-select" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -464,7 +467,6 @@ function setPatientGender(v) {
         { key: 'usg_abdomen', label: 'USG Abdomen & Pelvis (General)' },
         { key: 'usg_breast', label: 'USG Both Breasts' },
         { key: 'usg_thyroid', label: 'USG Thyroid Gland' },
-        { key: 'clinical_rx', label: 'Clinical Prescription / OPD Note (Rx)' },
         { key: 'cert_medical', label: 'Medical / Sick Leave Certificate' },
         { key: 'cert_fitness', label: 'Certificate of Medical Fitness' },
         { key: 'cert_experience', label: 'Healthcare Experience Certificate' }
@@ -472,7 +474,9 @@ function setPatientGender(v) {
       pathology: [
         { key: 'path_tft', label: 'Thyroid Function Test (TFT Panel)' },
         { key: 'path_hba1c', label: 'Biochemistry & Diabetes (HbA1c / eAG)' },
-        { key: 'path_general', label: 'General Pathology & Serology Panel (CRP, Vit-B12, etc.)' },
+        { key: 'path_general', label: 'General Pathology & Serology Panel (CRP, Vit-B12, etc.)' }
+      ],
+      rx: [
         { key: 'clinical_rx', label: 'Clinical Prescription / OPD Note (Rx)' }
       ]
     };
@@ -709,18 +713,10 @@ function setPatientGender(v) {
 
     function switchCategory(cat) {
       currentCategory = cat;
-      const usgTab = document.getElementById('tab-usg');
-      const pathTab = document.getElementById('tab-pathology');
-      
-      if (cat === 'usg') {
-        usgTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-clinic-600 text-clinic-700";
-        pathTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700";
-        setDefaultSigners('usg');
-      } else {
-        pathTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-clinic-600 text-clinic-700";
-        usgTab.className = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700";
-        setDefaultSigners('pathology');
-      }
+      const on = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-clinic-600 text-clinic-700";
+      const off = "flex-1 py-2 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+      ['usg', 'pathology', 'rx'].forEach(c => { const t = document.getElementById('tab-' + c); if (t) t.className = (c === cat) ? on : off; });
+      setDefaultSigners(cat);
 
       populateDropdown(cat);
       const firstKey = TEMPLATE_GROUPS[cat][0].key;
@@ -1432,13 +1428,13 @@ function setPatientGender(v) {
       const list = document.getElementById('saved-reports-list');
       const q = (document.getElementById('sd-search').value || '').trim().toLowerCase();
       document.getElementById('sd-total').textContent = '(' + savedReports.length + ')';
-      const nUsg = savedReports.filter(r => r.category !== 'pathology').length, nPath = savedReports.length - nUsg;
+      const catOf = r => r.templateKey === 'clinical_rx' ? 'rx' : (r.category === 'pathology' ? 'pathology' : 'usg');
+      const nUsg = savedReports.filter(r => catOf(r) === 'usg').length, nRx = savedReports.filter(r => catOf(r) === 'rx').length, nPath = savedReports.filter(r => catOf(r) === 'pathology').length;
       const chip = (k, label) => `<button onclick="setSdFilter('${k}')" class="px-3 py-1.5 rounded-full border ${sdFilter === k ? 'bg-clinic-600 text-white border-clinic-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${label}</button>`;
-      document.getElementById('sd-filters').innerHTML = chip('all', 'All ' + savedReports.length) + chip('usg', 'USG & Clinical ' + nUsg) + chip('pathology', 'Pathology ' + nPath);
+      document.getElementById('sd-filters').innerHTML = chip('all', 'All ' + savedReports.length) + chip('usg', 'USG & Clinical ' + nUsg) + chip('rx', 'Prescription ' + nRx) + chip('pathology', 'Pathology ' + nPath);
       document.getElementById('sd-status').innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i>Stored on this device (main store + automatic copy). Use <b>Backup</b> to keep a file safe; <b>Restore</b> recovers everything from it in one click.';
       const rows = savedReports.filter(r => {
-        if (sdFilter === 'usg' && r.category === 'pathology') return false;
-        if (sdFilter === 'pathology' && r.category !== 'pathology') return false;
+        if (sdFilter !== 'all' && catOf(r) !== sdFilter) return false;
         if (!q) return true;
         const t = (TEMPLATES[r.templateKey] && TEMPLATES[r.templateKey].title) || r.templateKey;
         return (r.patientName + ' ' + t + ' ' + r.date).toLowerCase().includes(q);
@@ -1450,11 +1446,12 @@ function setPatientGender(v) {
       list.innerHTML = rows.map(item => {
         const t = (TEMPLATES[item.templateKey] && TEMPLATES[item.templateKey].title) || item.templateKey;
         const when = new Date(item.savedAt || item.id).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-        const badge = item.category === 'pathology' ? 'bg-violet-100 text-violet-700' : 'bg-cyan-100 text-cyan-800';
+        const _c = item.templateKey === 'clinical_rx' ? 'rx' : (item.category === 'pathology' ? 'pathology' : 'usg');
+        const badge = _c === 'pathology' ? 'bg-violet-100 text-violet-700' : _c === 'rx' ? 'bg-emerald-100 text-emerald-700' : 'bg-cyan-100 text-cyan-800';
         return `<div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
           <div class="min-w-0 flex-1">
             <p class="font-bold text-slate-800 truncate">${abdEsc(item.patientName)} ${currentSavedId === item.id ? '<span class="ml-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded px-1.5 py-0.5 align-middle">OPEN NOW</span>' : ''}</p>
-            <p class="text-xs text-slate-500 mt-0.5"><span class="inline-block ${badge} rounded px-1.5 py-0.5 font-semibold mr-1">${item.category === 'pathology' ? 'Pathology' : 'USG / Clinical'}</span>${abdEsc(t)}</p>
+            <p class="text-xs text-slate-500 mt-0.5"><span class="inline-block ${badge} rounded px-1.5 py-0.5 font-semibold mr-1">${_c === 'pathology' ? 'Pathology' : _c === 'rx' ? 'Prescription' : 'USG / Clinical'}</span>${abdEsc(t)}</p>
             <p class="text-xs text-slate-400 mt-0.5">Report date: ${abdEsc(item.date)} &middot; Saved: ${abdEsc(when)}</p>
           </div>
           <div class="flex gap-2">
@@ -1468,7 +1465,8 @@ function setPatientGender(v) {
     function loadSavedReport(id) {
       const item = savedReports.find(r => r.id === id);
       if (!item) return;
-      if (item.category && item.category !== currentCategory) switchCategory(item.category);
+      const _cat = item.templateKey === 'clinical_rx' ? 'rx' : item.category;
+      if (_cat && _cat !== currentCategory) switchCategory(_cat);
       currentTemplateKey = item.templateKey;
       formData = JSON.parse(JSON.stringify(item.data));
       if (item.signers) { signers = item.signers.slice(); renderSignerPanel(); renderSignatures(); }
