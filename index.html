@@ -155,10 +155,12 @@
       list.push({ pin: pin, from: from, to: addMonths(from, months), id: pin + '|' + from });
     });
     function activePins() { return list.filter(function (p) { return today >= p.from && today <= p.to; }); }
-    function unlock(id) { ls('s', KEY, id); ls('r', FKEY); document.documentElement.classList.remove('pin-locked'); }
+    var TKEY = 'medico_unlock_ts_v1', HOURS = 3;
+    function unlock(id) { ls('s', KEY, id); ls('s', TKEY, String(Date.now())); ls('r', FKEY); document.documentElement.classList.remove('pin-locked'); }
     var active = activePins(), saved = ls('g', KEY);
-    if (saved && active.some(function (p) { return p.id === saved; })) { unlock(saved); return; }
-    ls('r', KEY);
+    var ts = +ls('g', TKEY) || 0, age = Date.now() - ts;
+    if (saved && ts && age >= 0 && age < HOURS * 3600000 && active.some(function (p) { return p.id === saved; })) { document.documentElement.classList.remove('pin-locked'); return; }
+    ls('r', KEY); ls('r', TKEY);
     if (!list.length) { fail('No valid PIN lines found in pins.js. Each line must be a 25-digit number.'); return; }
     if (!active.length) {
       var nextFrom = list.map(function (p) { return p.from; }).filter(function (d) { return d > today; }).sort()[0];
@@ -495,7 +497,7 @@ function setPatientGender(v) {
       const notice = f.notice == null ? RX_NOTICE : f.notice;
       return `
       <div style="font-family:Inter,Arial,sans-serif;color:#111;margin-top:-4px">
-        <div style="font-size:20px;font-weight:600;line-height:1.15">Dr. Israphil&nbsp; Ansari</div>
+        <div style="font-size:20px;font-weight:600;line-height:1.15">${window.rxDocName ? rxDocName(f) : 'Dr. Israphil&nbsp; Ansari'}</div>
         <div style="font-size:13px;line-height:1.35">BAMS (TU) NAMC No.658</div>
         <div style="font-size:13px;line-height:1.35">General Physician</div>
         <div style="border-top:1.5px solid #222;border-bottom:1.5px solid #222;margin-top:3px;padding:4px 0;font-size:13.5px">
@@ -1698,5 +1700,6 @@ function setPatientGender(v) {
       if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
     }
   </script>
+  <script src="plus.js"></script>
 </body>
 </html>
