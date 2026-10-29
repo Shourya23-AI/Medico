@@ -69,15 +69,31 @@ var PAN = {
     'Chemical Examination', ['Protein (Albumin)', 'Nil', ''], ['Glucose (Sugar)', 'Nil', ''], ['Ketone', 'Nil', ''], ['Bilirubin', 'Nil', ''], ['Urobilinogen', 'Normal', ''], ['Blood', 'Nil', ''], ['Nitrite', 'Negative', ''],
     'Microscopic Examination', ['Pus Cells', '0 - 5', '/HPF'], ['RBC', '0 - 2', '/HPF'], ['Epithelial Cells', 'Occasional', '/HPF'], ['Casts', 'Nil', ''], ['Crystals', 'Nil', ''], ['Bacteria / Others', 'Nil', '']] },
   lab_lipid: { g: 'Lipid Profile', title: 'BIOCHEMISTRY - LIPID PROFILE', spec: 'Serum (fasting)', rows: [
-    ['Total Cholesterol', '< 200', 'mg/dL'], ['Triglycerides', '< 150', 'mg/dL'], ['HDL Cholesterol', '> 40', 'mg/dL'], ['LDL Cholesterol', '< 100', 'mg/dL'], ['VLDL Cholesterol', '5 - 40', 'mg/dL'], ['Total Chol / HDL Ratio', '< 5.0', '']] },
+    ['Total Cholesterol', '< 200', 'mg/dL'], ['Triglycerides', '< 150', 'mg/dL'], ['HDL Cholesterol', '> 40', 'mg/dL'], ['LDL Cholesterol', '< 100', 'mg/dL'], ['VLDL Cholesterol', '5 - 40', 'mg/dL'], ['Total Chol / HDL Ratio', '< 5.0', ''], ['LDL / HDL Ratio', '2.5 - 3.5', '']] },
   lab_lft: { g: 'LFT (Liver Function Test)', title: 'BIOCHEMISTRY - LIVER FUNCTION TEST (LFT)', spec: 'Serum', rows: [
     ['Total Bilirubin', '0.2 - 1.2', 'mg/dL'], ['Direct Bilirubin', '0.0 - 0.3', 'mg/dL'], ['Indirect Bilirubin', '0.2 - 0.9', 'mg/dL'],
     ['SGOT (AST)', '5 - 40', 'U/L'], ['SGPT (ALT)', '5 - 40', 'U/L'], ['Alkaline Phosphatase (ALP)', '44 - 147', 'U/L'],
-    ['Total Protein', '6.0 - 8.3', 'g/dL'], ['Albumin', '3.5 - 5.2', 'g/dL'], ['Globulin', '2.0 - 3.5', 'g/dL'], ['A/G Ratio', '1.0 - 2.2', '']] },
+    ['Total Protein', '6.0 - 8.3', 'g/dL'], ['Albumin', '3.5 - 5.2', 'g/dL'], ['Globulin', '2.0 - 3.5', 'g/dL'], ['A/G Ratio', '1.0 - 2.2', ''], ['GGT', '0 - 55', 'U/L'], ['SGOT / SGPT Ratio', '', '']] },
   lab_rft: { g: 'RFT (Renal Function Test)', title: 'BIOCHEMISTRY - RENAL FUNCTION TEST (RFT)', spec: 'Serum', rows: [
     ['Urea', '15 - 45', 'mg/dL'], ['Creatinine', '0.6 - 1.3', 'mg/dL'], ['Uric Acid', '3.5 - 7.2', 'mg/dL'], ['Sodium (Na+)', '135 - 145', 'mmol/L'], ['Potassium (K+)', '3.5 - 5.0', 'mmol/L'], ['Chloride (Cl-)', '98 - 107', 'mmol/L']] },
   lab_bg: { g: 'Blood Group (ABO & Rh)', title: 'SEROLOGY - BLOOD GROUP (ABO & Rh)', spec: 'Whole Blood (EDTA)', note: 'Tested by slide / tube agglutination method.', rows: [
-    ['ABO Blood Group', '', ''], ['Rh (D) Factor', '', '']] }
+    ['ABO Blood Group', '', ''], ['Rh (D) Factor', '', '']] },
+  lab_kft: { g: 'KFT (Kidney Function Test)', title: 'BIOCHEMISTRY - KIDNEY FUNCTION TEST (KFT)', spec: 'Serum (2 ml)', rows: [
+    ['Urea', '13.00 - 43.00', 'mg/dL'], ['Creatinine', '0.60 - 1.30', 'mg/dL'], ['Uric Acid', '3.5 - 7.2', 'mg/dL'], ['Calcium', '8.50 - 10.50', 'mg/dL'], ['Phosphorus', '2.4 - 5.1', 'mg/dL'],
+    ['Alkaline Phosphatase (ALP)', '30.00 - 120.00', 'U/L'], ['Total Protein', '5.70 - 8.20', 'g/dL'], ['Albumin', '3.20 - 4.80', 'g/dL'],
+    ['Sodium (Na+)', '135.00 - 145.00', 'mEq/L'], ['Potassium (K+)', '3.50 - 5.00', 'mEq/L'], ['Chloride (Cl-)', '98.00 - 107.00', 'mEq/L']] },
+  lab_dengue: { g: 'Dengue Fever Panel', title: 'SEROLOGY - DENGUE FEVER PANEL', spec: 'Serum (2 ml)', rows: [
+    ['Dengue Antibody IgG (ELISA)', '1.80 - 2.20', 'Index'], ['Dengue Antibody IgM (ELISA)', '0.90 - 1.10', 'Index']] },
+  lab_widal: { g: 'Widal Test', title: 'SEROLOGY - WIDAL TEST', spec: 'Serum', rows: [
+    ['TO (Typhoid O Antigen)', '< 1:80', 'Titre'], ['TH (Typhoid H Antigen)', '< 1:80', 'Titre'], ['AO (Paratyphoid A O Antigen)', '< 1:80', 'Titre'], ['AH (Paratyphoid A H Antigen)', '< 1:80', 'Titre']] },
+  lab_scrub: { g: 'Scrub Typhus Antibody', title: 'SEROLOGY - SCRUB TYPHUS ANTIBODY', spec: 'Serum', note: 'Cut off OD: 0.32', rows: [
+    ['Scrub Typhus Antibody (OD)', '< 0.32', 'OD'], ['Result (Positive / Negative)', '', '']] },
+  lab_aso: { g: 'ASO Titre', title: 'SEROLOGY & IMMUNOLOGY - ANTISTREPTOLYSIN O (ASO) TITRE', spec: 'Serum', rows: [
+    ['Antistreptolysin O (ASO) Titre', '< 200', 'IU/mL']] },
+  lab_hiv: { g: 'HIV (Card Test)', title: 'SEROLOGY & IMMUNOLOGY - HIV (CARD TEST)', spec: 'Serum', note: 'Rapid card tests are screening tests; false positive and false negative results may occur. Advise: kindly confirm by ELISA or Western blot method.', rows: [
+    ['HIV - 1', 'Negative', ''], ['HIV - 2', 'Negative', '']] },
+  lab_vdrl: { g: 'VDRL', title: 'SEROLOGY & IMMUNOLOGY - VDRL', spec: 'Serum', note: 'Titres of >1:8 and rising titres are significant.', rows: [
+    ['VDRL', 'Non-reactive', '']] }
 };
 (function register() {
   var us = TEMPLATE_GROUPS.usg, at = us.findIndex(function (x) { return x.key === 'cert_medical'; });
@@ -95,6 +111,10 @@ var PAN = {
   });
 })();
 function flag(v, ref, sex) {
+  var sv = String(v).trim();
+  if (/^(positive|reactive|detected|present)/i.test(sv)) return '*';
+  var tm = /^1\s*:\s*(\d+)/.exec(sv), tr = /^\s*<\s*1\s*:\s*(\d+)/.exec(ref);
+  if (tm && tr) return +tm[1] >= +tr[1] ? 'H' : '';
   var n = parseFloat(String(v).replace(/,/g, '')); if (isNaN(n)) return '';
   var sx = /^\s*M:\s*([\d.,]+\s*-\s*[\d.,]+)\s*\/\s*F:\s*([\d.,]+\s*-\s*[\d.,]+)/.exec(ref);
   if (sx) { if (!sex) return ''; ref = sex === 'Male' ? sx[1] : sx[2]; }
@@ -116,10 +136,11 @@ window.renderUsgFields = function (fc, f) {
   }).join('') + '</div>';
   else fc.innerHTML = P.rows.map(function (r, i) {
     if (typeof r === 'string') return '<div class="font-bold text-clinic-800 text-[11px] uppercase pt-1">' + E(r) + '</div>';
-    return '<div class="grid grid-cols-12 gap-1 items-center"><span class="col-span-4 font-medium">' + E(r[0]) + '</span>' +
-      '<input class="col-span-3 border rounded p-1 font-bold" value="' + E(f['r' + i + 'V']) + '" ' + UD('r' + i + 'V') + '>' +
-      '<input class="col-span-3 border rounded p-1" value="' + E(f['r' + i + 'R']) + '" ' + UD('r' + i + 'R') + '>' +
-      '<span class="col-span-2 text-[10px] text-slate-500">' + E(r[2]) + '</span></div>';
+    var inp = function (k, cls) { return '<input class="border rounded p-1 w-full ' + cls + '" value="' + E(f[k]) + '" ' + UD(k) + '>'; };
+    return '<div class="lab-row grid grid-cols-12 gap-1 items-center"><span class="lab-n col-span-4 font-medium">' + E(r[0]) + '</span>' +
+      '<label class="lab-v col-span-3"><small>Result</small>' + inp('r' + i + 'V', 'font-bold') + '</label>' +
+      '<label class="lab-r col-span-3"><small>Reference</small>' + inp('r' + i + 'R', '') + '</label>' +
+      '<span class="lab-u col-span-2 text-[10px] text-slate-500">' + E(r[2]) + '</span></div>';
   }).join('') + '<div><label class="block font-medium">Notes</label><input type="text" value="' + E(f.notes) + '" ' + UD('notes') + ' class="w-full border rounded p-1"></div>';
   document.getElementById('form-fields-container').appendChild(fc);
 };
@@ -453,4 +474,34 @@ window.addEventListener('load', function () {
   document.addEventListener('visibilitychange', function () { if (!document.hidden) lockTick(); });
   window.addEventListener('focus', lockTick);
 });
+
+/* ---------- 14. Phone layout ---------- */
+(function () {
+  var st = document.createElement('style');
+  st.textContent = [
+    '#mob-bar{display:none}.lab-row small{display:none}',
+    '@media screen and (max-width:640px){',
+    'header>div{padding:8px 12px!important;flex-wrap:nowrap!important;gap:8px!important}header>div>div:last-child{flex-wrap:nowrap!important;gap:6px!important}',
+    'header .mh-btn span{display:none}header .mh-btn{min-width:40px;height:40px;padding:0 10px}',
+    'header .mh-btn[onclick*="saveCurrentReport"],header .mh-btn[onclick*="showSavedModal"],header .mh-btn[onclick*="downloadPDF"],header .mh-btn[onclick*="window.print"]{display:none!important}',
+    'main{padding:10px!important;gap:12px!important}main section>div.bg-white{padding:14px!important}',
+    '#tab-usg i,#tab-pathology i,#tab-rx i{display:none}#tab-usg,#tab-pathology,#tab-rx{font-size:12.5px!important;padding:10px 4px!important}',
+    '#form-fields-container{max-height:none!important;overflow:visible!important;padding-right:0!important}#signer-list{max-height:none!important}',
+    '#form-fields-container input:not([type=checkbox]):not([type=radio]),#form-fields-container select,#form-fields-container textarea{font-size:16px!important;padding:10px 12px!important;min-height:44px}',
+    '#form-fields-container .grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr))!important}#form-fields-container .grid{gap:10px!important}',
+    '#form-fields-container .lab-row{grid-template-columns:1fr 1fr!important;gap:6px 10px!important;padding:10px;background:#f8fafc;border:1px solid #e5eaf1;border-radius:12px}',
+    '#form-fields-container .lab-row>*{grid-column:auto!important}',
+    '.lab-n{order:1;font-size:14px;font-weight:700;color:#0b2545}.lab-u{order:2;text-align:right;font-size:12px!important}.lab-v{order:3}.lab-r{order:4}',
+    '.lab-row small{display:block;font-size:10.5px;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:2px}',
+    '.plus-chip{padding:7px 12px;font-size:12px}',
+    '#mob-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid #e3e9f1;padding:8px 10px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px -12px rgba(15,35,70,.25)}',
+    '#mob-bar button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:#0b2545;padding:7px 0;border-radius:10px;background:#eef4fb}#mob-bar button.g{background:#059669;color:#fff}',
+    'body{padding-bottom:78px}.plus-draft{bottom:86px!important}#toast{bottom:86px!important}',
+    '}'
+  ].join('');
+  document.head.appendChild(st);
+  var b = document.createElement('div'); b.id = 'mob-bar'; b.className = 'no-print';
+  b.innerHTML = '<button onclick="saveCurrentReport()"><i class="fa-solid fa-bookmark"></i>Save</button><button onclick="showSavedModal()"><i class="fa-solid fa-folder-open"></i>Saved</button><button class="g" onclick="downloadPDF()"><i class="fa-solid fa-download"></i>PDF</button><button onclick="window.print()"><i class="fa-solid fa-print"></i>Print</button>';
+  document.body.appendChild(b);
+})();
 })();
