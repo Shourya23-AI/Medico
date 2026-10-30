@@ -863,12 +863,7 @@ function setPatientGender(v) {
           <input type="text" value="${abdEsc(isPath ? (formData.patient.specimen || formData.patient.address || '') : (formData.patient.address || ''))}" oninput="updateData('patient', '${isPath ? 'specimen' : 'address'}', this.value)" class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-xs">
         </div>
       `;
-      if (isNameOnlyCert()) {   // employment / student certificate: only Name and Date are needed
-        pGrid.children[0].querySelector('label').innerText = 'Name';
-        [pGrid.children[4], pGrid.children[2], pGrid.children[1]].forEach(el => el && el.remove());
-        pGrid.className = "grid grid-cols-2 gap-2 text-xs";
-        pHeader.innerText = "1. Name & Date";
-      }
+      if (isNameOnlyCert()) pGrid.children[0].querySelector('label').innerText = 'Name';   // certificates: "Name" instead of "Patient Name"
       container.appendChild(pGrid);
 
       // 2. Specific Test Inputs
@@ -1671,25 +1666,11 @@ function setPatientGender(v) {
       applyLetterpad(rx ? 'usg' : currentCategory);   // the Rx pad always uses the Ansari Medico Clinic letterhead
     }
     
-    // Employment / student style certificates: the letterpad shows only the person's Name (no ID, age, gender, address, referrer).
+    // Certificates (medical, fitness, experience, student): label reads "Name" instead of "Patient Name"; all other details stay.
     function isNameOnlyCert() { return /^cert_|student|bonafide/i.test(currentTemplateKey || ''); }
     function applyNameOnlyCert() {
-      const bar = document.getElementById('patient-info-bar'); if (!bar) return;
-      const on = isNameOnlyCert(), cells = bar.children;
-      if (cells.length < 4) return;
-      const lab = cells[0].querySelector('span');
-      if (on) {
-        lab.innerText = 'Name';
-        document.getElementById('prev-patient-ref').style.display = 'none';
-        cells[1].style.display = 'none'; cells[2].style.display = 'none';
-        bar.style.gridTemplateColumns = '1fr auto';
-        cells[3].style.textAlign = 'right';
-      } else {
-        lab.innerText = 'Patient Name / ID';
-        document.getElementById('prev-patient-ref').style.display = '';
-        cells[1].style.display = ''; cells[2].style.display = '';
-        bar.style.gridTemplateColumns = ''; cells[3].style.textAlign = '';
-      }
+      const bar = document.getElementById('patient-info-bar'); if (!bar || !bar.children.length) return;
+      bar.children[0].querySelector('span').innerText = isNameOnlyCert() ? 'Name / ID' : 'Patient Name / ID';
     }
     renderLivePreview = function () { _renderLivePreview(); applyRxMode(); applyNameOnlyCert(); fitPaper(); };
 
