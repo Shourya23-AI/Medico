@@ -280,14 +280,57 @@ function rcpt() {
     items.map(function (i, k) { return '<tr><td style="padding:3px;border:1px solid #999">' + (k + 1) + '</td><td style="padding:3px;border:1px solid #999">' + E(i.s) + '</td><td style="padding:3px;border:1px solid #999;text-align:right">' + (+i.a || 0).toFixed(2) + '</td></tr>'; }).join('') +
     '</table><div style="text-align:right;font-size:12px;margin-top:4px">Total: <b>' + T.t.toFixed(2) + '</b>' + (T.d ? '<br>Discount: ' + T.d.toFixed(2) + '<br>Net: <b>' + T.n.toFixed(2) + '</b>' : '') + '<br>Paid: <b>' + T.p.toFixed(2) + '</b>' + (T.b > 0 ? '<br>Balance due: <b style="color:#b91c1c">' + T.b.toFixed(2) + '</b>' : '') + '</div><div style="margin-top:22px;text-align:right;font-size:11px;border-top:1px dashed #666;padding-top:2px">Received by / Signature</div>';
 }
+/* Print choice: with / without letterpad. The letterpad itself is never edited; "without" only hides it at print time and keeps its space blank. */
+function pageStyle(size) {
+  var g = document.getElementById('plus-page-style'); if (g) g.remove();
+  g = document.createElement('style'); g.id = 'plus-page-style';
+  g.textContent = size === 'A5' ? '@page{size:A5;margin:8mm}@page :first{margin:8mm}' : '@page{size:A4;margin:10mm 0 0 0}@page :first{margin:0}';
+  document.head.appendChild(g);
+}
+function runPrint(size, withPad, setup, after) {
+  pageStyle(size);
+  document.body.classList.add('plus-printing');
+  document.body.classList.toggle('lp-off', !withPad);
+  if (setup) setup();
+  var done = false;
+  function cleanup() {
+    if (done) return; done = true;
+    document.body.classList.remove('plus-printing', 'plus-bill', 'lp-off');
+    var h = document.getElementById('plus-print-host'); if (h) h.remove();
+    var g = document.getElementById('plus-page-style'); if (g) g.remove();
+    window.removeEventListener('afterprint', cleanup);
+    if (after) after();
+  }
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(function () { window.print(); setTimeout(cleanup, 60000); }, 200);
+}
+function askPrint(title, sizeLabel, onPick, onCancel) {
+  var last = LS.get('medico_print_pad', 'with');
+  PLUS._pick = function (w) { LS.set('medico_print_pad', w); close(); onPick(w === 'with'); };
+  PLUS._cancel = function () { close(); if (onCancel) onCancel(); };
+  modal('<i class="fa-solid fa-print"></i> ' + title,
+    '<p class="text-xs text-slate-500 mb-3">Paper size: <b>' + sizeLabel + '</b>. Choose how to print:</p>' +
+    '<button class="plus-pick' + (last === 'with' ? ' on' : '') + '" onclick="PLUS._pick(\'with\')"><i class="fa-solid fa-file-lines"></i><span><b>With letterpad</b><small>Prints the clinic header and footer. Use plain paper.</small></span></button>' +
+    '<button class="plus-pick' + (last === 'without' ? ' on' : '') + '" onclick="PLUS._pick(\'without\')"><i class="fa-regular fa-file"></i><span><b>Without letterpad</b><small>Header and footer areas are left blank. Use your pre-printed pad.</small></span></button>' +
+    '<button class="plus-chip mt-2" onclick="PLUS._cancel()">Cancel</button>');
+}
+PLUS.print = function () {
+  askPrint('Print document', 'A4', function (withPad) { runPrint('A4', withPad); });
+};
 PLUS.bPrint = function () {
   var T = billTotals(), items = bill.items.filter(function (i) { return i.s || i.a; });
   if (!items.length) { toast('Add at least one service'); return; }
-  var n = LS.get('medico_rcpt_n', 0) + 1; LS.set('medico_rcpt_n', n);
-  var sv = services(); items.forEach(function (i) { if (i.s && +i.a > 0) sv[i.s] = +i.a; }); LS.set('medico_services_v1', sv);
-  var all = LS.get('medico_bills_v1', []); all.push({ no: n, ts: Date.now(), name: bill.name, total: T.n, paid: T.p, items: items }); LS.set('medico_bills_v1', all);
-  document.body.classList.add('plus-printing'); window.print();
-  setTimeout(function () { document.body.classList.remove('plus-printing'); }, 600); rcpt();
+  var html = $('#plus-receipt').innerHTML;
+  askPrint('Print receipt', 'A5', function (withPad) {
+    var n = LS.get('medico_rcpt_n', 0) + 1; LS.set('medico_rcpt_n', n);
+    var sv = services(); items.forEach(function (i) { if (i.s && +i.a > 0) sv[i.s] = +i.a; }); LS.set('medico_services_v1', sv);
+    var all = LS.get('medico_bills_v1', []); all.push({ no: n, ts: Date.now(), name: bill.name, total: T.n, paid: T.p, items: items }); LS.set('medico_bills_v1', all);
+    runPrint('A5', withPad, function () {
+      var host = document.getElementById('plus-print-host');
+      if (!host) { host = document.createElement('div'); host.id = 'plus-print-host'; document.body.appendChild(host); }
+      host.innerHTML = '<div class="plus-rcpt-print">' + html + '</div>'; document.body.classList.add('plus-bill');
+    }, function () { PLUS.bill(); });
+  }, function () { PLUS.bill(); });
 };
 
 /* ---------- 7. Today summary ---------- */
@@ -463,9 +506,17 @@ css.textContent = '@media screen{html{scroll-behavior:smooth}body.bg-slate-100{b
   '.plus-rcpt{background:#fff;border:1px dashed #94a3b8;border-radius:10px;padding:12px;margin-top:12px;color:#111}' +
   '.plus-bk{display:flex;gap:8px;align-items:center;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:10px}.plus-bk.warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}.plus-bk.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}' +
   '.plus-draft{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1500;background:#0b2545;color:#fff;font-size:13px;padding:10px 14px;border-radius:14px;display:flex;gap:10px;align-items:center;box-shadow:0 12px 30px rgba(0,0,0,.3);max-width:94vw;animation:pls-up .3s ease}' +
-  '.plus-pin{background:#fef3c7;color:#92400e;font-size:12.5px;padding:6px 12px;text-align:center;border-bottom:1px solid #fcd34d}.plus-pin button{margin-left:10px}}' +
+  '.plus-pin{background:#fef3c7;color:#92400e;font-size:12.5px;padding:6px 12px;text-align:center;border-bottom:1px solid #fcd34d}.plus-pin button{margin-left:10px}' +
   '@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}' +
-  '@media print{body.plus-printing *{visibility:hidden!important}body.plus-printing #plus-receipt,body.plus-printing #plus-receipt *{visibility:visible!important}body.plus-printing #plus-receipt{position:absolute;left:0;top:0;width:148mm;border:0}body.plus-printing .plus-ov{background:none!important}@page{size:A5}}';
+  '#plus-print-host{display:none}' +
+  '.plus-pick{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px;border:1px solid #d3e2f3;border-radius:12px;background:#f8fafc;margin-bottom:8px;color:#0b2545}.plus-pick:hover,.plus-pick.on{border-color:#0284c7;background:#f0f7ff}.plus-pick i{font-size:20px;color:#0369a1;width:26px;text-align:center}.plus-pick b{display:block;font-size:14px}.plus-pick small{display:block;font-size:11.5px;color:#64748b}' +
+  '@media print{body.plus-bill>*:not(#plus-print-host){display:none!important}' +
+  'body.plus-bill #plus-print-host{display:block!important;position:static!important;width:100%;background:#fff}' +
+  'body.plus-bill #plus-print-host,body.plus-bill #plus-print-host *{visibility:visible!important}' +
+  'body.plus-bill #plus-print-host .plus-rcpt-print{width:100%;max-width:134mm;margin:0 auto;color:#111;font-family:Arial,Helvetica,sans-serif}' +
+  'body.plus-bill.lp-off #plus-print-host .plus-rcpt-print>div:nth-child(-n+2){visibility:hidden!important}' +
+  'body.lp-off #letterhead,body.lp-off #letterhead *,body.lp-off .lp-foot,body.lp-off .lp-foot *{visibility:hidden!important}body.lp-off #letterhead,body.lp-off .lp-foot{background:none!important;border-color:transparent!important}' +
+  '}';
 document.head.appendChild(css);
 
 window.addEventListener('load', function () {
@@ -483,7 +534,7 @@ window.addEventListener('load', function () {
     '@media screen and (max-width:640px){',
     'header>div{padding:8px 12px!important;flex-wrap:nowrap!important;gap:8px!important}header>div>div:last-child{flex-wrap:nowrap!important;gap:6px!important}',
     'header .mh-btn span{display:none}header .mh-btn{min-width:40px;height:40px;padding:0 10px}',
-    'header .mh-btn[onclick*="saveCurrentReport"],header .mh-btn[onclick*="showSavedModal"],header .mh-btn[onclick*="downloadPDF"],header .mh-btn[onclick*="window.print"]{display:none!important}',
+    'header .mh-btn[onclick*="saveCurrentReport"],header .mh-btn[onclick*="showSavedModal"],header .mh-btn[onclick*="downloadPDF"],header .mh-btn[onclick*="PLUS.print"]{display:none!important}',
     'main{padding:10px!important;gap:12px!important}main section>div.bg-white{padding:14px!important}',
     '#tab-usg i,#tab-pathology i,#tab-rx i{display:none}#tab-usg,#tab-pathology,#tab-rx{font-size:12.5px!important;padding:10px 4px!important}',
     '#form-fields-container{max-height:none!important;overflow:visible!important;padding-right:0!important}#signer-list{max-height:none!important}',
@@ -501,7 +552,7 @@ window.addEventListener('load', function () {
   ].join('');
   document.head.appendChild(st);
   var b = document.createElement('div'); b.id = 'mob-bar'; b.className = 'no-print';
-  b.innerHTML = '<button onclick="saveCurrentReport()"><i class="fa-solid fa-bookmark"></i>Save</button><button onclick="showSavedModal()"><i class="fa-solid fa-folder-open"></i>Saved</button><button class="g" onclick="downloadPDF()"><i class="fa-solid fa-download"></i>PDF</button><button onclick="window.print()"><i class="fa-solid fa-print"></i>Print</button>';
+  b.innerHTML = '<button onclick="saveCurrentReport()"><i class="fa-solid fa-bookmark"></i>Save</button><button onclick="showSavedModal()"><i class="fa-solid fa-folder-open"></i>Saved</button><button class="g" onclick="downloadPDF()"><i class="fa-solid fa-download"></i>PDF</button><button onclick="PLUS.print()"><i class="fa-solid fa-print"></i>Print</button>';
   document.body.appendChild(b);
 })();
 })();
