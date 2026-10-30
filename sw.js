@@ -1,4 +1,4 @@
-const CACHE = 'medico-v16';
+const CACHE = 'medico-v17';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './pins.js', './plus.js', './combine.js', './mobile.js'];
 self.addEventListener('install', e => {
   // Cache each file separately so one missing file cannot stop the whole install

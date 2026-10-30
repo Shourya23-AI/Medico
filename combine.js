@@ -1,4 +1,4 @@
-/* Medico Combine: print several small pathology tests on ONE page.
+/* Medico Combine: print several USG reports and/or lab (pathology) tests together on ONE page.
    Tick extra tests in the form -> they share the patient header, signatures and page,
    and the heading becomes "Topic 1 & Topic 2". Loads after index.html's script and plus.js. */
 (function () {
@@ -8,12 +8,18 @@ var E = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, func
 var CMB = window.CMB = {};
 
 /* ---------- helpers ---------- */
-// Templates that can share a page: everything in the current tab except certificates and the prescription pad.
-function options() {
-  return (TEMPLATE_GROUPS[currentCategory] || []).filter(function (x) { return !/^(cert_|clinical_rx$)/.test(x.key); });
+// Templates that can share a page: every USG report and every lab test (any tab), except certificates and the prescription pad.
+var GROUP_NAMES = { usg: 'USG & Clinical', pathology: 'Pathology Lab' };
+function allOptions() {
+  var out = [];
+  ['usg', 'pathology'].forEach(function (c) {
+    (TEMPLATE_GROUPS[c] || []).forEach(function (x) { if (!/^(cert_|clinical_rx$)/.test(x.key)) out.push({ key: x.key, label: x.label, grp: c }); });
+  });
+  return out;
 }
-function canCombine(k) { return options().some(function (x) { return x.key === k; }); }
-function noun() { return currentCategory === 'pathology' ? 'tests' : 'reports'; }
+function options() { return allOptions(); }
+function canCombine(k) { return allOptions().some(function (x) { return x.key === k; }); }
+function noun() { return 'reports or tests'; }
 function labelOf(k) { var g = Object.keys(TEMPLATE_GROUPS).reduce(function (a, c) { return a.concat(TEMPLATE_GROUPS[c]); }, []).filter(function (x) { return x.key === k; })[0]; return g ? g.label : k; }
 // Pathology: "ENDOCRINOLOGY - THYROID FUNCTION TEST (TFT)" -> "THYROID FUNCTION TEST (TFT)".  USG: "USG Thyroid Gland (x)" -> "USG Thyroid Gland".
 function topic(k) {
@@ -53,6 +59,7 @@ st.textContent =
   '.cmb-list label:hover{background:#e0f2fe}.cmb-list input{margin-top:2px;flex:none}' +
   '.cmb-x{font-size:11px;font-weight:600;color:#be123c;background:#fff1f2;border:1px solid #fecdd3;border-radius:6px;padding:1px 8px}' +
   '.cmb-h{font:700 11px Inter,Arial,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:#0b2545;background:#e8f7fb;border-left:4px solid #0e7490;padding:3px 8px;margin-bottom:4px;break-after:avoid}' +
+  '.cmb-grp{grid-column:1/-1;font:700 10px Inter,Arial,sans-serif;text-transform:uppercase;letter-spacing:.05em;color:#0e7490;background:#e8f7fb;border-radius:4px;padding:2px 6px;margin-top:3px}' +
   '.cmb-sec{break-inside:auto}';
 document.head.appendChild(st);
 
@@ -74,11 +81,14 @@ function fieldsHtml(key, fields) {
 }
 
 function pickerHtml() {
+  var lastGrp = '';
   var items = options().filter(function (x) { return x.key !== currentTemplateKey; }).map(function (x) {
-    return '<label data-s="' + E(x.label.toLowerCase()) + '"><input type="checkbox" data-k="' + x.key + '" onchange="CMB.toggle(this.dataset.k,this.checked)"><span>' + E(x.label) + '</span></label>';
+    var head = '';
+    if (x.grp !== lastGrp) { lastGrp = x.grp; head = '<div class="cmb-grp" data-grp="' + x.grp + '">' + E(GROUP_NAMES[x.grp] || x.grp) + '</div>'; }
+    return head + '<label data-s="' + E(x.label.toLowerCase()) + '" data-g="' + x.grp + '"><input type="checkbox" data-k="' + x.key + '" onchange="CMB.toggle(this.dataset.k,this.checked)"><span>' + E(x.label) + '</span></label>';
   }).join('');
   return '<div class="flex items-center justify-between"><b class="text-xs text-cyan-900"><i class="fa-solid fa-layer-group"></i> Put more ' + noun() + ' on this same page</b><span id="cmb-n" class="text-[10px] font-bold text-emerald-700"></span></div>' +
-    '<p class="text-[11px] text-slate-500 mt-0.5 mb-1.5">Tick the ' + noun() + ' to print together with this one. Saves paper. The heading becomes &ldquo;Topic 1 &amp; Topic 2&rdquo;.</p>' +
+    '<p class="text-[11px] text-slate-500 mt-0.5 mb-1.5">Tick the ' + noun() + ' (USG and lab, in any mix) to print together with this one. Saves paper. The heading becomes &ldquo;Topic 1 &amp; Topic 2&rdquo;.</p>' +
     '<input id="cmb-q" type="text" placeholder="Search..." oninput="CMB.filter(this.value)" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1.5 bg-white">' +
     '<div id="cmb-list" class="cmb-list">' + items + '</div>' +
     '<div id="cmb-title-wrap" class="mt-2" style="display:none"><label class="block text-[10px] text-slate-500 font-semibold">Page heading (leave empty for automatic)</label>' +
@@ -114,6 +124,10 @@ function buildUI() {
 CMB.filter = function (q) {
   q = String(q || '').toLowerCase().trim();
   document.querySelectorAll('#cmb-list label').forEach(function (l) { l.style.display = (!q || l.dataset.s.indexOf(q) >= 0) ? '' : 'none'; });
+  document.querySelectorAll('#cmb-list .cmb-grp').forEach(function (h) {
+    var any = Array.prototype.some.call(document.querySelectorAll('#cmb-list label[data-g="' + h.dataset.grp + '"]'), function (l) { return l.style.display !== 'none'; });
+    h.style.display = any ? '' : 'none';
+  });
 };
 CMB.toggle = function (k, on) {
   if (!canCombine(k) || k === currentTemplateKey) return;
