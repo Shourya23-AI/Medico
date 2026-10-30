@@ -8,11 +8,26 @@ var E = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, func
 var CMB = window.CMB = {};
 
 /* ---------- helpers ---------- */
-function isLab(k) { return TEMPLATE_GROUPS.pathology.some(function (x) { return x.key === k; }); }
-// "ENDOCRINOLOGY - THYROID FUNCTION TEST (TFT)" -> "THYROID FUNCTION TEST (TFT)"
-function topic(k) { var t = (TEMPLATES[k] || {}).title || k, i = t.indexOf(' - '); return i > 0 ? t.slice(i + 3) : t; }
+// Templates that can share a page: everything in the current tab except certificates and the prescription pad.
+function options() {
+  return (TEMPLATE_GROUPS[currentCategory] || []).filter(function (x) { return !/^(cert_|clinical_rx$)/.test(x.key); });
+}
+function canCombine(k) { return options().some(function (x) { return x.key === k; }); }
+function noun() { return currentCategory === 'pathology' ? 'tests' : 'reports'; }
+function labelOf(k) { var g = Object.keys(TEMPLATE_GROUPS).reduce(function (a, c) { return a.concat(TEMPLATE_GROUPS[c]); }, []).filter(function (x) { return x.key === k; })[0]; return g ? g.label : k; }
+// Pathology: "ENDOCRINOLOGY - THYROID FUNCTION TEST (TFT)" -> "THYROID FUNCTION TEST (TFT)".  USG: "USG Thyroid Gland (x)" -> "USG Thyroid Gland".
+function topic(k) {
+  if (TEMPLATE_GROUPS.pathology.some(function (x) { return x.key === k; })) { var t = (TEMPLATES[k] || {}).title || k, i = t.indexOf(' - '); return i > 0 ? t.slice(i + 3) : t; }
+  return labelOf(k).replace(/\s*\(.*?\)\s*$/, '');
+}
+// starting values for a test added as an extra (same as picking it from the dropdown)
+function freshFields(k) {
+  var f = JSON.parse(JSON.stringify(TEMPLATES[k].fields));
+  if (k === 'usg_abdomen') ABD_ORGANS.forEach(function (o) { f[o.k] = o.def; });
+  return f;
+}
 function extras() { return (formData && Array.isArray(formData.extras)) ? formData.extras : []; }
-function joinTopics(a) { return a.length < 3 ? a.join(' & ') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; }
+function joinTopics(a) { a = a.map(function (t) { return t.replace(/ & /g, ' and '); }); return a.length < 3 ? a.join(' & ') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; }
 function headingOf(key, data) {
   var ex = (data && Array.isArray(data.extras)) ? data.extras : [];
   if (!ex.length) return (data && data.title) || (TEMPLATES[key] || {}).title || '';
@@ -54,16 +69,17 @@ function fieldsHtml(key, fields) {
   } catch (e) { html = '<p class="text-rose-600">Could not load this test.</p>'; }
   finally { scratch.remove(); real.id = 'form-fields-container'; }
   // route typing in these boxes to this extra test instead of the main one
-  return html.replace(/updateData\(\s*'fields'\s*,/g, "CMB.upd('" + key + "',");
+  return html.replace(/updateData\(\s*'fields'\s*,/g, "CMB.upd('" + key + "',")
+             .replace(/toggleAbdOrgan\(\s*'(\w+)'\s*,/g, "CMB.abd('" + key + "','$1',");
 }
 
 function pickerHtml() {
-  var items = TEMPLATE_GROUPS.pathology.filter(function (x) { return x.key !== currentTemplateKey; }).map(function (x) {
+  var items = options().filter(function (x) { return x.key !== currentTemplateKey; }).map(function (x) {
     return '<label data-s="' + E(x.label.toLowerCase()) + '"><input type="checkbox" data-k="' + x.key + '" onchange="CMB.toggle(this.dataset.k,this.checked)"><span>' + E(x.label) + '</span></label>';
   }).join('');
-  return '<div class="flex items-center justify-between"><b class="text-xs text-cyan-900"><i class="fa-solid fa-layer-group"></i> Put more tests on this same page</b><span id="cmb-n" class="text-[10px] font-bold text-emerald-700"></span></div>' +
-    '<p class="text-[11px] text-slate-500 mt-0.5 mb-1.5">Tick the tests to print together with this one. Saves paper. The heading becomes &ldquo;Topic 1 &amp; Topic 2&rdquo;.</p>' +
-    '<input id="cmb-q" type="text" placeholder="Search tests..." oninput="CMB.filter(this.value)" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1.5 bg-white">' +
+  return '<div class="flex items-center justify-between"><b class="text-xs text-cyan-900"><i class="fa-solid fa-layer-group"></i> Put more ' + noun() + ' on this same page</b><span id="cmb-n" class="text-[10px] font-bold text-emerald-700"></span></div>' +
+    '<p class="text-[11px] text-slate-500 mt-0.5 mb-1.5">Tick the ' + noun() + ' to print together with this one. Saves paper. The heading becomes &ldquo;Topic 1 &amp; Topic 2&rdquo;.</p>' +
+    '<input id="cmb-q" type="text" placeholder="Search..." oninput="CMB.filter(this.value)" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1.5 bg-white">' +
     '<div id="cmb-list" class="cmb-list">' + items + '</div>' +
     '<div id="cmb-title-wrap" class="mt-2" style="display:none"><label class="block text-[10px] text-slate-500 font-semibold">Page heading (leave empty for automatic)</label>' +
     '<input id="cmb-title" type="text" value="' + E(formData.titleOverride || '') + '" oninput="CMB.setTitle(this.value)" class="w-full border border-slate-300 rounded p-1.5 text-xs bg-white"></div>';
@@ -86,7 +102,7 @@ function refreshExtras() {
 function buildUI() {
   var c = $('#form-fields-container'); if (!c) return;
   ['cmb-box', 'cmb-extras'].forEach(function (id) { var o = document.getElementById(id); if (o) o.remove(); });
-  if (!isLab(currentTemplateKey)) return;
+  if (!canCombine(currentTemplateKey)) return;
   var box = document.createElement('div'); box.id = 'cmb-box'; box.className = 'cmb-card'; box.innerHTML = pickerHtml();
   var hdr = Array.prototype.filter.call(c.children, function (el) { return /^\s*2\.\s*Test/.test(el.textContent); })[0];
   c.insertBefore(box, hdr || c.children[1] || null);
@@ -100,10 +116,10 @@ CMB.filter = function (q) {
   document.querySelectorAll('#cmb-list label').forEach(function (l) { l.style.display = (!q || l.dataset.s.indexOf(q) >= 0) ? '' : 'none'; });
 };
 CMB.toggle = function (k, on) {
-  if (!isLab(k) || k === currentTemplateKey) return;
+  if (!canCombine(k) || k === currentTemplateKey) return;
   if (!Array.isArray(formData.extras)) formData.extras = [];
   var has = formData.extras.some(function (e) { return e.k === k; });
-  if (on && !has) formData.extras.push({ k: k, f: JSON.parse(JSON.stringify(TEMPLATES[k].fields)) });
+  if (on && !has) formData.extras.push({ k: k, f: freshFields(k) });
   if (!on && has) formData.extras = formData.extras.filter(function (e) { return e.k !== k; });
   refreshExtras(); renderLivePreview();
 };
@@ -111,6 +127,13 @@ CMB.upd = function (k, field, val) {
   var e = extras().filter(function (x) { return x.k === k; })[0]; if (!e) return;
   e.f[field] = val; renderLivePreview();
 };
+CMB.abd = function (k, organ, on) {   // organ checklist of an extra USG Abdomen report
+  var e = extras().filter(function (x) { return x.k === k; })[0]; if (!e) return;
+  e.f.sel = (e.f.sel || []).filter(function (x) { return x !== organ; }); if (on) e.f.sel.push(organ);
+  refreshExtras(); renderLivePreview();
+};
+CMB.options = function () { return options().filter(function (x) { return x.key !== currentTemplateKey; }); };
+CMB.noun = noun;
 CMB.setTitle = function (v) { formData.titleOverride = v; renderLivePreview(); };
 
 /* ---------- preview side ---------- */
@@ -139,10 +162,19 @@ function compose() {
 var prevRFF = window.renderFormFields;
 window.renderFormFields = function () { prevRFF.apply(this, arguments); buildUI(); };
 var prevLP = window.renderLivePreview;
-window.renderLivePreview = function () { prevLP.apply(this, arguments); if (isLab(currentTemplateKey)) compose(); };
+window.renderLivePreview = function () { prevLP.apply(this, arguments); if (canCombine(currentTemplateKey)) compose(); };
 var prevClear = window.clearFormInputs;
 window.clearFormInputs = function () {
-  extras().forEach(function (e) { e.f = JSON.parse(JSON.stringify(TEMPLATES[e.k].fields)); });
+  extras().forEach(function (e) { e.f = freshFields(e.k); });
   prevClear.apply(this, arguments);
+};
+// changing the patient's gender can change which organs an extra Abdomen report offers
+var prevSPG = window.setPatientGender;
+window.setPatientGender = function () {
+  prevSPG.apply(this, arguments);
+  var ab = extras().filter(function (e) { return e.k === 'usg_abdomen'; });
+  if (!ab.length) return;
+  ab.forEach(function (e) { var ok = abdOrgans(e.f).map(function (o) { return o.k; }); e.f.sel = (e.f.sel || []).filter(function (x) { return ok.indexOf(x) >= 0; }); });
+  refreshExtras(); renderLivePreview();
 };
 })();

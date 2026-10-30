@@ -1,5 +1,5 @@
-const CACHE = 'medico-v11';
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './pins.js', './plus.js', './combine.js'];
+const CACHE = 'medico-v12';
+const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './pins.js', './plus.js', './combine.js', './mobile.js'];
 self.addEventListener('install', e => {
   // Cache each file separately so one missing file cannot stop the whole install
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(CORE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
