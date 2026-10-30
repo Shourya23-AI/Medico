@@ -1354,7 +1354,7 @@ function setPatientGender(v) {
       } else if (currentTemplateKey === 'cert_medical') {
         body.innerHTML = `
           <div class="space-y-4 leading-relaxed font-serif text-slate-800">
-            <p class="font-bold text-base">TO WHOM IT MAY CONCERN,</p>
+            <p class="font-bold text-base text-center">TO WHOM IT MAY CONCERN,</p>
             <p class="text-justify">This is to certify that <strong>${formData.patient.name}</strong> has been diagnosed with <strong class="underline">${f.diagnosis}</strong>.</p>
             <p class="text-justify">${f.narrative}</p>
           </div>
@@ -1368,7 +1368,7 @@ function setPatientGender(v) {
       } else if (currentTemplateKey === 'cert_experience') {
         body.innerHTML = `
           <div class="space-y-4 leading-relaxed font-serif text-slate-800">
-            <p class="font-bold text-base">TO WHOM IT MAY CONCERN</p>
+            <p class="font-bold text-base text-center">TO WHOM IT MAY CONCERN</p>
             <p class="text-justify">This is to certify that <strong>${formData.patient.name}</strong> was employed as a <strong>${f.designation}</strong>.</p>
             <p class="text-justify pt-2">${f.appraisal}</p>
           </div>
@@ -1672,7 +1672,7 @@ function setPatientGender(v) {
     }
     
     // Employment / student style certificates: the letterpad shows only the person's Name (no ID, age, gender, address, referrer).
-    function isNameOnlyCert() { return /^cert_experience$|student|bonafide/i.test(currentTemplateKey || ''); }
+    function isNameOnlyCert() { return /^cert_|student|bonafide/i.test(currentTemplateKey || ''); }
     function applyNameOnlyCert() {
       const bar = document.getElementById('patient-info-bar'); if (!bar) return;
       const on = isNameOnlyCert(), cells = bar.children;
