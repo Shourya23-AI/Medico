@@ -1488,7 +1488,7 @@ function setPatientGender(v) {
       const rows = savedReports.filter(r => {
         if (sdFilter !== 'all' && catOf(r) !== sdFilter) return false;
         if (!q) return true;
-        const t = (TEMPLATES[r.templateKey] && TEMPLATES[r.templateKey].title) || r.templateKey;
+        const t = (window.CMB && CMB.titleOf(r)) || (TEMPLATES[r.templateKey] && TEMPLATES[r.templateKey].title) || r.templateKey;
         return (r.patientName + ' ' + t + ' ' + r.date).toLowerCase().includes(q);
       });
       if (!rows.length) {
@@ -1496,7 +1496,7 @@ function setPatientGender(v) {
         return;
       }
       list.innerHTML = rows.map(item => {
-        const t = (TEMPLATES[item.templateKey] && TEMPLATES[item.templateKey].title) || item.templateKey;
+        const t = (window.CMB && CMB.titleOf(item)) || (TEMPLATES[item.templateKey] && TEMPLATES[item.templateKey].title) || item.templateKey;
         const when = new Date(item.savedAt || item.id).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
         const _c = item.templateKey === 'clinical_rx' ? 'rx' : (item.category === 'pathology' ? 'pathology' : 'usg');
         const badge = _c === 'pathology' ? 'bg-violet-100 text-violet-700' : _c === 'rx' ? 'bg-emerald-100 text-emerald-700' : 'bg-cyan-100 text-cyan-800';
@@ -1714,6 +1714,7 @@ function setPatientGender(v) {
     }
   </script>
   <script src="plus.js"></script>
+  <script src="combine.js"></script>
   <script>
     // If plus.js did not load or crashed, the "More" button is missing: say so instead of failing silently.
     window.addEventListener('load', function () {
