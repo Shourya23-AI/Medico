@@ -1,4 +1,4 @@
-const CACHE = 'medico-v14';
+const CACHE = 'medico-v16';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './pins.js', './plus.js', './combine.js', './mobile.js'];
 self.addEventListener('install', e => {
   // Cache each file separately so one missing file cannot stop the whole install
@@ -18,6 +18,6 @@ self.addEventListener('fetch', e => {
         return res;
       }
       return caches.match(e.request).then(r => r || res);
-    }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+    }).catch(() => caches.match(e.request).then(r => r || (e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error())))
   );
 });

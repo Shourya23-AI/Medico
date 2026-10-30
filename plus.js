@@ -506,7 +506,7 @@ css.textContent = '@media screen{html{scroll-behavior:smooth}body.bg-slate-100{b
   '.plus-rcpt{background:#fff;border:1px dashed #94a3b8;border-radius:10px;padding:12px;margin-top:12px;color:#111}' +
   '.plus-bk{display:flex;gap:8px;align-items:center;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:10px}.plus-bk.warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}.plus-bk.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}' +
   '.plus-draft{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1500;background:#0b2545;color:#fff;font-size:13px;padding:10px 14px;border-radius:14px;display:flex;gap:10px;align-items:center;box-shadow:0 12px 30px rgba(0,0,0,.3);max-width:94vw;animation:pls-up .3s ease}' +
-  '.plus-pin{background:#fef3c7;color:#92400e;font-size:12.5px;padding:6px 12px;text-align:center;border-bottom:1px solid #fcd34d}.plus-pin button{margin-left:10px}' +
+  '.plus-pin{background:#fef3c7;color:#92400e;font-size:12.5px;padding:6px 12px;text-align:center;border-bottom:1px solid #fcd34d}.plus-pin button{margin-left:10px}}' +
   '@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}' +
   '#plus-print-host{display:none}' +
   '.plus-pick{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px;border:1px solid #d3e2f3;border-radius:12px;background:#f8fafc;margin-bottom:8px;color:#0b2545}.plus-pick:hover,.plus-pick.on{border-color:#0284c7;background:#f0f7ff}.plus-pick i{font-size:20px;color:#0369a1;width:26px;text-align:center}.plus-pick b{display:block;font-size:14px}.plus-pick small{display:block;font-size:11.5px;color:#64748b}' +
